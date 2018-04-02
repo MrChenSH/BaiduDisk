@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import java.net.URL?>
+
+<BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.csh.controller.MainController">
+	<center>
+		<TableView fx:id="fileTable" BorderPane.alignment="CENTER">
+			<columns>
+				<TableColumn fx:id="checkBoxColumn" prefWidth="30.0" resizable="false" sortable="false">
+					<graphic>
+						<CheckBox fx:id="checkAllBox" mnemonicParsing="false" onMouseClicked="#onClickToCheckAll" />
+					</graphic>
+				</TableColumn>
+				<TableColumn fx:id="fileNameColumn" minWidth="150.0" prefWidth="400.0" text="文件名" />
+				<TableColumn fx:id="modifyTimeColumn" minWidth="100.0" prefWidth="150.0" text="修改时间" />
+				<TableColumn fx:id="fileSizeColumn" minWidth="100.0" prefWidth="150.0" text="大小" />
+			</columns>
+			<contextMenu>
+				<ContextMenu id="table_content_menu" fx:id="fileTableMenu" onHidden="#onTableMenuHidden" style="visibility: hidden;">
+					<items>
+						<MenuItem mnemonicParsing="false" onAction="#onClickToOpenFile" text="打开" />
+						<SeparatorMenuItem />
+						<MenuItem mnemonicParsing="false" onAction="#onClickToRename" text="重命名" />
+						<MenuItem mnemonicParsing="false" text="删除" />
+						<MenuItem mnemonicParsing="false" text="属性" />
+					</items>
+				</ContextMenu>
+			</contextMenu>
+		</TableView>
+	</center>
+	<top>
+		<VBox prefHeight="120.0">
+			<children>
+				<AnchorPane prefHeight="80.0">
+					<children>
+						<ImageView fx:id="userImage" fitHeight="70.0" fitWidth="70.0" layoutX="5.0" layoutY="5.0" pickOnBounds="true" preserveRatio="true" />
+						<Label fx:id="userLabel" layoutX="90.0" layoutY="20.0" text="Label">
+							<font>
+								<Font name="Microsoft YaHei" size="15.0" />
+							</font>
+						</Label>
+						<ProgressBar fx:id="quotaInfos" layoutX="90.0" layoutY="45.0" prefWidth="200.0" progress="0.0" />
+                  <Text layoutX="376.0" layoutY="50.0" strokeType="OUTSIDE" strokeWidth="0.0" text="dsgasdgasdgasdg" />
+					</children>
+				</AnchorPane>
+				<ToolBar fx:id="toolbar" prefHeight="40.0">
+					<items>
+						<Button mnemonicParsing="false" />
+						<Pane prefHeight="30.0" prefWidth="531.0" />
+						<TextField prefHeight="25.0" prefWidth="200.0" />
+					</items>
+				</ToolBar>
+			</children>
+		</VBox>
+	</top>
+	<stylesheets>
+		<URL value="@/css/Main.css" />
+	</stylesheets>
+</BorderPane>
