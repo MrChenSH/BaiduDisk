@@ -1,55 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
-<?import javafx.scene.web.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.Cursor?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.text.Font?>
 <?import javafx.scene.web.WebView?>
 
-<AnchorPane id="login_pane" fx:id="loginPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
-            minWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" style="-fx-background-color: #fff;"
-            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.csh.controller.LoginController">
-	<children>
-		<Label layoutX="128.0" layoutY="30.0" text="帐号密码登录">
-			<font>
-				<Font name="Microsoft YaHei" size="24.0"/>
-			</font>
-		</Label>
-		<TextField id="user_field" fx:id="userField" layoutX="70.0" layoutY="90.0" prefHeight="30.0"
-		           prefWidth="260.0" promptText="手机/邮箱/用户名"/>
-		<PasswordField id="pwd_field" fx:id="pwdField" layoutX="70.0" layoutY="130.0" prefHeight="30.0"
-		               prefWidth="260.0" promptText="密码"/>
-		<Pane fx:id="verifyPane" layoutX="70.0" layoutY="170.0" prefHeight="30.0" prefWidth="260.0" visible="false">
-			<children>
-				<TextField id="verify_field" fx:id="verifyField" prefHeight="30.0" prefWidth="100.0" promptText="验证码"/>
-				<ImageView id="verify_image" fx:id="verifyImage" fitHeight="40.0" fitWidth="120.0" layoutX="105.0"
-				           layoutY="-5.0" pickOnBounds="true" preserveRatio="true"/>
-				<Hyperlink id="verify_link" fx:id="verifyLink" layoutX="215.0" layoutY="5.0" lineSpacing="9.0"
-				           onMouseClicked="#onClickToRefreshVerifyCode" style="-fx-border-style: none;" text="换一张"
-				           textFill="#3582f8"/>
-			</children>
-		</Pane>
-		<Button id="login_btn" fx:id="loginBtn" layoutX="70.0" layoutY="240.0" mnemonicParsing="false"
-		        onMouseClicked="#onClickToLogin" prefHeight="40.0" prefWidth="260.0"
-		        style="-fx-background-color: #3582f8;" text="登录" textFill="WHITE">
-			<font>
-				<Font size="15.0"/>
-			</font>
-			<cursor>
-				<Cursor fx:constant="HAND"/>
-			</cursor>
-		</Button>
-		<Label id="msg_label" fx:id="errorLabel" layoutX="70.0" layoutY="214.0" textFill="RED"/>
-		<WebView fx:id="webView" mouseTransparent="true" onTouchPressed="#onTouchPressed" prefWidth="400.0"
-		         visible="false" disable="true"/>
-	</children>
-</AnchorPane>
+
+<WebView fx:id="webView" fx:controller="com.csh.controller.LoginController"
+		 xmlns="http://javafx.com/javafx/8.0.121"
+		 xmlns:fx="http://javafx.com/fxml/1"/>

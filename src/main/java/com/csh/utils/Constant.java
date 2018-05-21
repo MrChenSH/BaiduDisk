@@ -1,5 +1,6 @@
 package com.csh.utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 
@@ -14,7 +15,7 @@ public class Constant
 {
 	public static final long BYTE_MAX_SIZE = 1024;
 
-	public static final long k_BYTE_MAX_SIZE = 1024 * 1024;
+	public static final long K_BYTE_MAX_SIZE = 1024 * 1024;
 
 	public static final long M_BYTE_MAX_SIZE = 1024 * 1024 * 1024;
 
@@ -38,10 +39,16 @@ public class Constant
 	 * 获取网盘配额信息URL
 	 */
 	public static final String QUOTA_URL = "https://pan.baidu.com/api/quota?";
+
 	/**
 	 * 获取文件列表URL
 	 */
 	public static final String LIST_URL = "https://pan.baidu.com/api/list?";
+
+	/**
+	 * 搜索文件列表URL
+	 */
+	public static final String SEARCH_URL = "https://pan.baidu.com/api/search?";
 
 	/**
 	 * 获取公钥URL
@@ -85,6 +92,8 @@ public class Constant
 	 */
 	public static final Set<Header> DEFAULT_HEADERS = new HashSet<>();
 
+	public static final Map<String,String> FONT_AWESOME = new HashMap<>();
+
 	static
 	{
 		ERRORS.put(2, "您输入的帐号不存在！");
@@ -94,6 +103,14 @@ public class Constant
 		ERRORS.put(257, "请输入验证码！");
 		ERRORS.put(120021, "您的帐号可能存在安全隐患，为保障您的帐号安全，请验证后登录。");
 
-		DEFAULT_HEADERS.add(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.104 Safari/537.36"));
+//		DEFAULT_HEADERS.add(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.104 Safari/537.36"));
+
+		DEFAULT_HEADERS.add(new BasicHeader("Cookie",StringUtils.join(CookieUtil.cookies,"; ")));
+
+
+	}
+
+	public static void main(String[] args) {
+		System.out.println(FontAwesome.HOME.value);
 	}
 }

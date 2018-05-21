@@ -1,67 +1,185 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.text.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
+<?import com.csh.coustom.PathLink?>
+<?import java.lang.String?>
 <?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.csh.controller.MainController">
-	<center>
-		<TableView fx:id="fileTable" BorderPane.alignment="CENTER">
-			<columns>
-				<TableColumn fx:id="checkBoxColumn" prefWidth="30.0" resizable="false" sortable="false">
-					<graphic>
-						<CheckBox fx:id="checkAllBox" mnemonicParsing="false" onMouseClicked="#onClickToCheckAll" />
-					</graphic>
-				</TableColumn>
-				<TableColumn fx:id="fileNameColumn" minWidth="150.0" prefWidth="400.0" text="文件名" />
-				<TableColumn fx:id="modifyTimeColumn" minWidth="100.0" prefWidth="150.0" text="修改时间" />
-				<TableColumn fx:id="fileSizeColumn" minWidth="100.0" prefWidth="150.0" text="大小" />
-			</columns>
-			<contextMenu>
-				<ContextMenu id="table_content_menu" fx:id="fileTableMenu" onHidden="#onTableMenuHidden" style="visibility: hidden;">
-					<items>
-						<MenuItem mnemonicParsing="false" onAction="#onClickToOpenFile" text="打开" />
-						<SeparatorMenuItem />
-						<MenuItem mnemonicParsing="false" onAction="#onClickToRename" text="重命名" />
-						<MenuItem mnemonicParsing="false" text="删除" />
-						<MenuItem mnemonicParsing="false" text="属性" />
-					</items>
-				</ContextMenu>
-			</contextMenu>
-		</TableView>
-	</center>
-	<top>
-		<VBox prefHeight="120.0">
-			<children>
-				<AnchorPane prefHeight="80.0">
-					<children>
-						<ImageView fx:id="userImage" fitHeight="70.0" fitWidth="70.0" layoutX="5.0" layoutY="5.0" pickOnBounds="true" preserveRatio="true" />
-						<Label fx:id="userLabel" layoutX="90.0" layoutY="20.0" text="Label">
-							<font>
-								<Font name="Microsoft YaHei" size="15.0" />
-							</font>
-						</Label>
-						<ProgressBar fx:id="quotaInfos" layoutX="90.0" layoutY="45.0" prefWidth="200.0" progress="0.0" />
-                  <Text layoutX="376.0" layoutY="50.0" strokeType="OUTSIDE" strokeWidth="0.0" text="dsgasdgasdgasdg" />
-					</children>
-				</AnchorPane>
-				<ToolBar fx:id="toolbar" prefHeight="40.0">
-					<items>
-						<Button mnemonicParsing="false" />
-						<Pane prefHeight="30.0" prefWidth="531.0" />
-						<TextField prefHeight="25.0" prefWidth="200.0" />
-					</items>
-				</ToolBar>
-			</children>
-		</VBox>
-	</top>
-	<stylesheets>
-		<URL value="@/css/Main.css" />
-	</stylesheets>
+<BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8.0.121"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.csh.controller.MainController">
+    <top>
+        <VBox prefHeight="120.0">
+            <children>
+                <AnchorPane prefHeight="80.0">
+                    <children>
+                        <ImageView fx:id="userImage" fitHeight="70.0" fitWidth="70.0" layoutX="5.0" layoutY="5.0"
+                                   pickOnBounds="true" preserveRatio="true"/>
+                        <Label fx:id="userLabel" layoutX="90.0" layoutY="10.0" text="用户名">
+                            <font>
+                                <Font size="16.0"/>
+                            </font>
+                        </Label>
+                        <ProgressBar fx:id="quotaBar" layoutX="90.0" layoutY="35.0" prefWidth="200.0" progress="0.0"/>
+                        <Label fx:id="quotaText" layoutX="90.0" layoutY="70.0" text="使用信息"/>
+                    </children>
+                </AnchorPane>
+                <Separator prefHeight="0.0"/>
+                <BorderPane prefHeight="35.0">
+                    <left>
+                        <HBox alignment="CENTER" prefHeight="35.0" BorderPane.alignment="CENTER">
+                            <children>
+                                <PathLink id="back_btn" fx:id="backBtn" disable="true" onAction="#onClickToBack"
+                                          text="后退" visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                </PathLink>
+                                <PathLink id="forward_btn" fx:id="forwardBtn" disable="true" text="前进" visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                </PathLink>
+                                <PathLink id="home_btn" fx:id="homeBtn" onAction="#onClickToOpenFile" path="/" text="主页"
+                                          visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                </PathLink>
+                                <Separator orientation="VERTICAL"/>
+                            </children>
+                            <BorderPane.margin>
+                                <Insets/>
+                            </BorderPane.margin>
+                        </HBox>
+                    </left>
+                    <right>
+                        <HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+                            <children>
+                                <PathLink id="refresh_btn" fx:id="refreshBtn" onAction="#onClickToOpenFile" path="/"
+                                          text="刷新" visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                </PathLink>
+                                <Separator orientation="VERTICAL"/>
+                                <TextField id="search_field" fx:id="searchField" promptText="搜索网盘文件">
+                                    <font>
+                                        <Font size="14.0"/>
+                                    </font>
+                                </TextField>
+                                <PathLink id="search_btn" fx:id="searchBtn" onAction="#onClickToSearchFile" text="搜索"
+                                          visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                    <HBox.margin>
+                                        <Insets right="5.0"/>
+                                    </HBox.margin>
+                                </PathLink>
+                            </children>
+                        </HBox>
+                    </right>
+                    <center>
+                        <HBox fx:id="pathFlow" alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+                            <children>
+                                <PathLink id="home_link" fx:id="homeLink" onAction="#onClickToOpenFile" path="/"
+                                          styleClass="path-link" text="我的网盘" visited="true">
+                                </PathLink>
+                            </children>
+                        </HBox>
+                    </center>
+                </BorderPane>
+            </children>
+        </VBox>
+    </top>
+    <stylesheets>
+        <URL value="@/css/Main.css"/>
+    </stylesheets>
+    <center>
+        <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <center>
+                <TableView id="file_table" fx:id="fileTable" onContextMenuRequested="#onTableContextMenu"
+                           tableMenuButtonVisible="true" BorderPane.alignment="CENTER">
+                    <columns>
+                        <TableColumn fx:id="checkBoxColumn" editable="false" prefWidth="30.0" resizable="false"
+                                     sortable="false" text="全选">
+                            <graphic>
+                                <CheckBox fx:id="checkAllBox" contentDisplay="CENTER" focusTraversable="false"
+                                          mnemonicParsing="false" onMouseClicked="#onClickToCheckAll">
+                                    <padding>
+                                        <Insets right="-5.0"/>
+                                    </padding>
+                                </CheckBox>
+                            </graphic>
+                        </TableColumn>
+                        <TableColumn fx:id="fileNameColumn" minWidth="150.0" prefWidth="400.0" text="文件名"/>
+                        <TableColumn fx:id="modifyTimeColumn" minWidth="100.0" prefWidth="150.0" text="修改时间"/>
+                        <TableColumn fx:id="fileSizeColumn" minWidth="100.0" prefWidth="150.0" text="大小"/>
+                    </columns>
+                    <contextMenu>
+                        <ContextMenu id="table_content_menu" fx:id="contextMenu" onHidden="#onTableMenuHidden"
+                                     style="visibility: visible;">
+                            <items>
+                                <MenuItem mnemonicParsing="false" onAction="#onClickToOpenFile" text="打开"/>
+                                <SeparatorMenuItem/>
+                                <MenuItem mnemonicParsing="false" onAction="#onClickToRename" text="重命名"/>
+                                <MenuItem mnemonicParsing="false" text="删除"/>
+                                <MenuItem mnemonicParsing="false" text="属性"/>
+                            </items>
+                        </ContextMenu>
+                    </contextMenu>
+                </TableView>
+            </center>
+            <bottom>
+                <BorderPane prefHeight="30.0" BorderPane.alignment="CENTER">
+                    <left>
+                        <Label fx:id="fileCount" text="XXX项" BorderPane.alignment="CENTER">
+                            <BorderPane.margin>
+                                <Insets left="10.0"/>
+                            </BorderPane.margin>
+                        </Label>
+                    </left>
+                    <right>
+                        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                            <children>
+                                <PathLink fx:id="prevBtn" onAction="#onClickToPagination" text="上一页" visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                </PathLink>
+                                <PathLink fx:id="nextBtn" onAction="#onClickToPagination" text="下一页" visited="true">
+                                    <styleClass>
+                                        <String fx:value="nav-btn"/>
+                                        <String fx:value="icon"/>
+                                    </styleClass>
+                                </PathLink>
+                            </children>
+                        </HBox>
+                    </right>
+                </BorderPane>
+            </bottom>
+        </BorderPane>
+    </center>
 </BorderPane>

@@ -1,3 +1,46 @@
+.nav-btn {
+    -fx-border-width: 0;
+    -fx-font-size: 16px;
+    -fx-underline: false;
+}
+
+.icon {
+    -fx-font-family: FontAwesome;
+    -fx-font-weight: normal;
+    -fx-font-style: normal;
+    -fx-font-size: 16px;
+    -fx-pref-width: 24px;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+.path-link {
+    -fx-border-width: 0;
+    -fx-font-size: 13px;
+    -fx-underline: false;
+}
+
+.action-btn {
+    -fx-cursor: hand;
+}
+
+.action-btn:hover {
+    -fx-progress-color: deepskyblue;
+}
+
+#home_btn {
+    -fx-font-size: 18px;
+}
+
+#search_field, #file_table {
+    -fx-background-color: transparent;
+}
+
+#file_table {
+    -fx-border-width: 1 0 0 0;
+    -fx-border-color: #CFCFCF;
+}
+
 #table_content_menu {
-	-fx-pref-width: 150px;
+    -fx-pref-width: 150px;
 }

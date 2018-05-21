@@ -1,12 +1,12 @@
 package com.csh.model;
 
 import com.csh.utils.Constant;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.beans.property.*;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -19,7 +19,7 @@ public class BaiduFile implements Serializable
 	private StringProperty fileName = new SimpleStringProperty();
 
 	@JsonProperty("isdir")
-	private IntegerProperty isDir = new SimpleIntegerProperty();
+	private BooleanProperty isDir = new SimpleBooleanProperty();
 
 	private IntegerProperty category = new SimpleIntegerProperty();
 
@@ -52,12 +52,12 @@ public class BaiduFile implements Serializable
 		this.fileName.set(fileName);
 	}
 
-	public Integer getIsDir()
+	public Boolean isDir()
 	{
 		return isDir.get();
 	}
 
-	public void setIsDir(int isDir)
+	public void setIsDir(Boolean isDir)
 	{
 		this.isDir.set(isDir);
 	}
@@ -122,7 +122,7 @@ public class BaiduFile implements Serializable
 		return fileName;
 	}
 
-	public IntegerProperty isDirProperty()
+	public BooleanProperty isDirProperty()
 	{
 		return isDir;
 	}
