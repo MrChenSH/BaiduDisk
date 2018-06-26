@@ -1,24 +1,27 @@
 package com.csh.controller;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
 import com.csh.app.App;
+import com.csh.coustom.IconButton;
 import com.csh.coustom.PathLink;
 import com.csh.http.RequestProxy;
 import com.csh.model.BaiduFile;
 import com.csh.utils.Constant;
+import com.csh.utils.CookieUtil;
 import com.csh.utils.FontAwesome;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -28,20 +31,26 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.text.Text;
-import net.sf.json.JSONObject;
+import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 
-import java.math.BigDecimal;
+import java.io.File;
+import java.io.IOException;
+import java.net.CookieHandler;
+import java.net.URI;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 public class MainController extends BorderPane implements Initializable {
 
-	private static Logger logger = Logger.getLogger(MainController.class);
+	private static final Logger logger = Logger.getLogger(MainController.class);
 
 	@FXML
 	private ImageView userImage;
@@ -56,6 +65,12 @@ public class MainController extends BorderPane implements Initializable {
 	private Label quotaText;
 
 	@FXML
+	private Button loginBtn;
+
+	@FXML
+	private IconButton uploadBtn;
+
+	@FXML
 	private PathLink backBtn;
 
 	@FXML
@@ -65,7 +80,7 @@ public class MainController extends BorderPane implements Initializable {
 	private PathLink homeBtn;
 
 	@FXML
-	private HBox pathFlow;
+	private HBox breadcrumb;
 
 	@FXML
 	private PathLink homeLink;
@@ -104,10 +119,10 @@ public class MainController extends BorderPane implements Initializable {
 	private Label fileCount;
 
 	@FXML
-	private Hyperlink prevBtn;
+	private IconButton prevBtn;
 
 	@FXML
-	private Hyperlink nextBtn;
+	private IconButton nextBtn;
 
 	private App app;
 
@@ -123,45 +138,27 @@ public class MainController extends BorderPane implements Initializable {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		homeBtn.setText(FontAwesome.HOME.value);
-		backBtn.setText(FontAwesome.ARROW_LEFT.value);
-		forwardBtn.setText(FontAwesome.ARROW_RIGHT.value);
-		refreshBtn.setText(FontAwesome.REFRESH.value);
-		searchBtn.setText(FontAwesome.SEARCH.value);
-		prevBtn.setText(FontAwesome.CHEVRON_LEFT.value);
-		nextBtn.setText(FontAwesome.CHEVRON_RIGHT.value);
-
-		if (RequestProxy.yunData.isEmpty()) {
+		if (StrUtil.isBlank(CookieUtil.COOKIE_STR) || CollectionUtil.isEmpty(RequestProxy.YUN_DATA)) {
 			Platform.runLater(() -> {
 				try {
 					app.getPrimaryStage().hide();
 					app.generateLoginPanel();
 					app.getPrimaryStage().show();
 				} catch (Exception e) {
-					logger.error(e);
+					logger.error(e.getMessage(), e);
 				}
 			});
 		} else {
 			try {
-
-				JSONObject info = RequestProxy.getQuotaInfos();
-
-				if (info.getInt("errno") == 0) {
-					userLabel.setText(RequestProxy.yunData.getString("MYNAME"));
-					userImage.setImage(new Image(RequestProxy.yunData.getString("MYAVATAR")));
-					double used = info.getDouble("used");
-					double total = info.getDouble("total");
-					quotaBar.setProgress(used / total);
-					quotaText.setText(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "GB/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "GB");
-				}
-
-				fileTable.itemsProperty().addListener((observable, oldValue, newValue) -> fileCount.setText(newValue.size() + "项"));
+				fileTable.setPlaceholder(new Label("正在登录，请稍候……"));
+				fileTable.itemsProperty().addListener((observable, oldValue, newValue) -> {
+					if (newValue != null) fileCount.setText(newValue.size() + "项");
+				});
 
 				checkBoxColumn.setCellValueFactory(new PropertyValueFactory("checked"));
 				checkBoxColumn.setCellFactory(colums -> new TableCell<BaiduFile, Boolean>() {
 					@Override
 					protected void updateItem(Boolean checked, boolean empty) {
-						super.updateItem(checked, empty);
 						TableRow<BaiduFile> row = this.getTableRow();
 						if (row != null) {
 							BaiduFile item = row.getItem();
@@ -176,14 +173,8 @@ public class MainController extends BorderPane implements Initializable {
 
 								checkBox.setOnAction(event -> {
 									int checkeds = items.filtered(file -> file.getChecked()).size();
-									if (checkeds == 0) {
-										checkAllBox.setSelected(false);
-										checkAllBox.setIndeterminate(false);
-									} else if (checkeds == items.size()) {
-										checkAllBox.setSelected(true);
-									} else {
-										checkAllBox.setIndeterminate(true);
-									}
+									checkAllBox.setSelected(checkeds == items.size());
+									checkAllBox.setIndeterminate(checkeds != 0 && checkeds < items.size());
 								});
 
 								this.setGraphic(checkBox);
@@ -239,26 +230,45 @@ public class MainController extends BorderPane implements Initializable {
 											if (item.isDir()) {
 												icon.setText(FontAwesome.FOLDER_OPEN.value);
 											} else {
-												switch (name.substring(name.lastIndexOf(".") + 1)) {
-													case "txt":
-														icon.setText(FontAwesome.FILE_TEXT.value);
-														break;
-													case "apk":
-														icon.setText(FontAwesome.ANDROID.value);
-														break;
-													default:
-														icon.setText(FontAwesome.FOLDER_OPEN.value);
-														break;
+												String suffix = name.substring(name.lastIndexOf(".") + 1).toLowerCase();
+
+												if (suffix.equals("txt")) {
+													icon.setText(FontAwesome.FILE_TEXT.value);
+												} else if (suffix.equals("apk")) {
+													icon.setText(FontAwesome.ANDROID.value);
+												} else if (suffix.equals("pdf")) {
+													icon.setText(FontAwesome.FILE_PDF.value);
+												} else if (suffix.equals("font")) {
+													icon.setText(FontAwesome.FONT.value);
+												} else if (suffix.matches("doc|docx")) {
+													icon.setText(FontAwesome.FILE_WORD.value);
+												} else if (suffix.matches("xls|xlsx")) {
+													icon.setText(FontAwesome.FILE_EXCEL.value);
+												} else if (suffix.matches("ppt|pptx")) {
+													icon.setText(FontAwesome.FILE_PPT.value);
+												} else if (suffix.matches(Constant.FileType.IMAGE)) {
+													icon.setText(FontAwesome.FILE_IMAGE.value);
+												} else if (suffix.matches(Constant.FileType.AUDIO)) {
+													icon.setText(FontAwesome.FILE_AUDIO.value);
+												} else if (suffix.matches(Constant.FileType.ARCHIVE)) {
+													icon.setText(FontAwesome.FILE_ARCHIVE.value);
+												} else if (suffix.matches(Constant.FileType.VIDEO)) {
+													icon.setText(FontAwesome.FILE_VIDEO.value);
+												} else {
+													icon.setText(FontAwesome.FILE.value);
 												}
 											}
 
-
-											nameLabel.setCursor(Cursor.HAND);
+											nameLabel.setTooltip(new Tooltip(name));
+											nameLabel.getStyleClass().addAll("action-btn");
 											icon.getStyleClass().add("icon");
+											share.setVisible(false);
 											share.setTooltip(new Tooltip("分享文件"));
 											share.getStyleClass().addAll("icon", "action-btn");
+											download.setVisible(false);
 											download.setTooltip(new Tooltip("下载文件"));
 											download.getStyleClass().addAll("icon", "action-btn");
+											delete.setVisible(false);
 											delete.setTooltip(new Tooltip("删除文件"));
 											delete.getStyleClass().addAll("icon", "action-btn");
 
@@ -271,12 +281,17 @@ public class MainController extends BorderPane implements Initializable {
 											borderPane.setRight(actionBox);
 											BorderPane.setAlignment(nameLabel, Pos.CENTER_LEFT);
 
+											nameLabel.setOnMouseClicked(event -> {
+												if (event.getButton().equals(MouseButton.PRIMARY)) {
+													onClickToOpenFile(new ActionEvent(row, row));
+												}
+											});
+
 											this.setGraphic(borderPane);
 										}
 
 									}
 								}
-
 							}
 						}
 				);
@@ -325,45 +340,94 @@ public class MainController extends BorderPane implements Initializable {
                 {
                     TableRow<BaiduFile> row = new TableRow<>();
 
-
                     return row;
                 });*/
 
 
-				loadTableData("/");
+				Platform.runLater(() -> {
+					try {
+						JSONObject info = RequestProxy.getQuotaInfos();
+						if (new Integer(0).equals(info.getInt("errno"))) {
+							userLabel.setText(RequestProxy.YUN_DATA.getStr(Constant.NAME_KEY));
+							userImage.setImage(new Image(RequestProxy.YUN_DATA.getStr(Constant.AVATAR_KEY)));
+							double used = info.getDouble("used");
+							double total = info.getDouble("total");
+							quotaBar.setProgress(used / total);
+							quotaText.setText(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "GB/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "GB");
+
+							this.loadTableData("/");
+						}
+					} catch (Exception e) {
+						logger.error(e.getMessage(), e);
+					}
+				});
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
 		}
 	}
 
-	public void onClickToBack(MouseEvent event) {
+	@FXML
+	private void onClickToUpload() {
+		FileChooser chooser = new FileChooser();
+
+		List<File> files = chooser.showOpenMultipleDialog(this.app.getPrimaryStage());
+
+		System.out.println(files);
+	}
+
+	@FXML
+	private void onClickToDownload() {
+
+	}
+
+	@FXML
+	private void onClickToBack(MouseEvent event) {
 		if (event.getButton().equals(MouseButton.PRIMARY)) {
 //            BaiduFile file = fileTable.getItems().get(0);
 //            String path = file.getPath().substring(0, file.getPath().lastIndexOf("/"));
 		}
 	}
 
+	@FXML
+	private void onClickToLogin(ActionEvent event) throws IOException {
+		Stage stage = new Stage();
+		stage.setTitle("用户登录");
+		stage.initOwner(app.getPrimaryStage());
+		stage.initModality(Modality.APPLICATION_MODAL);
+		WebView webView = new WebView();
+		URI uri = URI.create(Constant.BASE_URL);
+
+		Map<String, List<String>> headers = new LinkedHashMap<>();
+		headers.put("Set-Cookie", CookieUtil.COOKIES);
+		CookieHandler.getDefault().put(uri, headers);
+
+		webView.getEngine().load(Constant.BASE_URL);
+		stage.setScene(new Scene(webView));
+//		stage.centerOnScreen();
+		stage.show();
+	}
+
 	/**
 	 * 全选/反选
 	 *
-	 * @param event
 	 * @throws Exception
 	 */
-	public void onClickToCheckAll(MouseEvent event) {
-		if (event.getButton().equals(MouseButton.PRIMARY)) {
-			fileTable.getItems().forEach(baiduFile -> baiduFile.setChecked(checkAllBox.isSelected()));
-		}
+	@FXML
+	private void onClickToCheckAll() {
+		fileTable.getItems().forEach(baiduFile -> baiduFile.setChecked(checkAllBox.isSelected()));
 	}
 
-	public void onTableMenuHidden() {
+	@FXML
+	private void onTableMenuHidden() {
 //        contextMenu.setStyle("visibility:hidden");
 	}
 
-	public void onClickToOpenFile(ActionEvent event) {
+	@FXML
+	private void onClickToOpenFile(ActionEvent event) {
 		if (event.getSource() instanceof PathLink) {
 			PathLink link = (PathLink) event.getSource();
-			ObservableList<Node> links = pathFlow.getChildren();
+			ObservableList<Node> links = breadcrumb.getChildren();
 			int index = links.indexOf(link);
 
 			if (index + 1 < links.size()) this.loadTableData(link.getPath());
@@ -374,50 +438,73 @@ public class MainController extends BorderPane implements Initializable {
 			} else {
 				links.remove(index + 1, links.size());
 			}
-
 		} else {
 			BaiduFile item = fileTable.getSelectionModel().getSelectedItem();
-			if (item != null && item.isDir()) {
-				PathLink link = new PathLink();
+			if (item != null) {
+				if (item.isDir()) {
+					PathLink link = new PathLink(item.getFileName(), item.getPath());
 
-				link.setVisited(true);
-				link.setPath(item.getPath());
-				link.setText(item.getFileName());
-				link.setOnAction(homeLink.getOnAction());
-				link.getStyleClass().addAll(homeLink.getStyleClass());
+					link.setVisited(true);
+					link.setOnAction(homeLink.getOnAction());
+					link.setTooltip(new Tooltip(item.getFileName()));
+					link.getStyleClass().addAll(homeLink.getStyleClass());
 
+					breadcrumb.getChildren().addAll(new Label("/"), link);
 
-				backBtn.setDisable(false);
-				pathFlow.getChildren().addAll(new Label("/"), link);
+					this.loadTableData(item.getPath());
+				} else {
+					String fileName = item.getFileName();
+					String suffix = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
 
-				this.loadTableData(item.getPath());
+					if (suffix.matches(Constant.FileType.TEXT)) {
+						Stage stage = new Stage();
+						stage.setTitle(fileName);
+						stage.setWidth(600);
+						stage.setHeight(200);
+//						stage.initOwner(app.getPrimaryStage());
+//						stage.initModality(Modality.WINDOW_MODAL);
+//						stage.centerOnScreen();
+						stage.show();
+					}
+				}
 			}
 		}
 
 	}
 
-	public void onClickToSearchFile() {
-		try {
-			String keyword = searchField.getText();
-			if (!keyword.isEmpty()) {
-				fileTable.setItems(FXCollections.observableArrayList(RequestProxy.searchFileList(keyword)));
-			}
-		} catch (Exception e) {
-			logger.error(e);
+	/**
+	 * 刷新列表
+	 */
+	@FXML
+	private void onClickToRefresh() {
+		new Thread(new LoadTableDataTask(refreshBtn.getPath() == null)).start();
+	}
+
+	/**
+	 * 搜索文件
+	 */
+	@FXML
+	private void onClickToSearchFile() {
+		if (StrUtil.isNotBlank(searchField.getText())) {
+			refreshBtn.setPath(null);
+			new Thread(new LoadTableDataTask(true)).start();
 		}
 	}
 
-	public void onClickToRename() {
+	@FXML
+	private void onClickToRename() {
 		fileTable.setEditable(true);
 		fileTable.edit(fileTable.getSelectionModel().getSelectedIndex(), fileNameColumn);
 	}
 
-
-	public void onTableContextMenu(ContextMenuEvent event) {
+	@FXML
+	private void onTableContextMenu(ContextMenuEvent event) {
+		System.out.println(event);
 		if (event.getY() < 26) contextMenu.hide();
 	}
 
-	public void onClickToPagination(ActionEvent event) {
+	@FXML
+	private void onClickToPagination(ActionEvent event) {
 		if (event.getSource().equals(prevBtn)) {
 
 		} else {
@@ -431,11 +518,35 @@ public class MainController extends BorderPane implements Initializable {
 	 * @param path 网盘路径
 	 */
 	private void loadTableData(String path) {
-		try {
-			refreshBtn.setPath(path);
-			fileTable.setItems(FXCollections.observableArrayList(RequestProxy.getFileList(path)));
-		} catch (Exception e) {
-			logger.error(e);
+		refreshBtn.setPath(path);
+		new Thread(new LoadTableDataTask(false)).start();
+	}
+
+	private class LoadTableDataTask extends Task<ObservableList<BaiduFile>> {
+
+		private boolean isSearch;
+
+		public LoadTableDataTask(boolean isSearch) {
+			this.isSearch = isSearch;
+			checkAllBox.setSelected(false);
+			checkAllBox.setIndeterminate(false);
+			fileTable.itemsProperty().bind(this.valueProperty());
+			fileTable.setPlaceholder(new Label("正在获取文件列表，请稍候……"));
+		}
+
+		@Override
+		protected ObservableList<BaiduFile> call() {
+			ObservableList<BaiduFile> list = FXCollections.emptyObservableList();
+			try {
+				if (isSearch) {
+					list = FXCollections.observableArrayList(RequestProxy.searchFileList(searchField.getText()));
+				} else {
+					list = FXCollections.observableArrayList(RequestProxy.getFileList(refreshBtn.getPath()));
+				}
+			} catch (Exception e) {
+				Platform.runLater(() -> fileTable.setPlaceholder(new Label(e.getMessage())));
+			}
+			return list;
 		}
 	}
 }

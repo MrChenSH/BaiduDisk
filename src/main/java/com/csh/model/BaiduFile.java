@@ -1,5 +1,6 @@
 package com.csh.model;
 
+import cn.hutool.core.date.DateUtil;
 import com.csh.utils.Constant;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -99,7 +100,7 @@ public class BaiduFile implements Serializable
 
 	public void setModifyTime(Long modifyTime)
 	{
-		this.modifyTime.set(Constant.DATE_FORMAT.format(new Date(modifyTime * 1000L)));
+		this.modifyTime.set(DateUtil.formatDateTime(new Date(modifyTime * 1000L)));
 	}
 
 	public Boolean getChecked()

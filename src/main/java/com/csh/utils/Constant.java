@@ -1,35 +1,37 @@
 package com.csh.utils;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-public class Constant
-{
+public final class Constant {
+
+	private Constant() {
+	}
+
 	public static final long BYTE_MAX_SIZE = 1024;
 
 	public static final long K_BYTE_MAX_SIZE = 1024 * 1024;
 
 	public static final long M_BYTE_MAX_SIZE = 1024 * 1024 * 1024;
 
-	public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-	public static final String CHARSET_UTF_8 = "UTF-8";
-
-	public static final String CHARSET_ISO_8859_1 = "ISO-8859-1";
-
 	public static final String CONTENT_TYPE_TEXT_HTML = "text/xml;charset=utf-8";
 
 	public static final String CONTENT_TYPE_FORM_URL = "application/x-www-form-urlencoded";
 
 	public static final String CONTENT_TYPE_JSON_URL = "application/json;charset=utf-8";
+
+	/**
+	 * yunData中保存的百度token的key值
+	 */
+	public static final String TOKEN_KEY = "MYBDSTOKEN";
+	/**
+	 * yunData中保存的用户名的key值
+	 */
+	public static final String NAME_KEY = "MYNAME";
+	/**
+	 * yunData中保存的用户头像的key值
+	 */
+	public static final String AVATAR_KEY = "MYAVATAR";
 
 	public static final String BASE_URL = "https://pan.baidu.com/";
 
@@ -88,29 +90,46 @@ public class Constant
 	public static final Map<Integer, String> ERRORS = new HashMap<>();
 
 	/**
-	 * 默认请求头（用户浏览器标识）
+	 * 文件类型
 	 */
-	public static final Set<Header> DEFAULT_HEADERS = new HashSet<>();
+	public final class FileType {
 
-	public static final Map<String,String> FONT_AWESOME = new HashMap<>();
+		/**
+		 * 文本文件
+		 */
+		public static final String TEXT = "txt|log|ini|properties";
 
-	static
-	{
+		/**
+		 * 图片
+		 */
+		public static final String IMAGE = "jpg|png|jpeg|gif|bmp";
+
+		/**
+		 * 音频
+		 */
+		public static final String AUDIO = "mp3|wav|m4a|ape|flac|ogg";
+
+		/**
+		 * 视频
+		 */
+		public static final String VIDEO = "avi|wmv|mpeg|mp4|mov|mkv|flv|f4v|m4v|rmvb|rm|3gp|dat|ts|mts|vob";
+
+		/**
+		 * 压缩文件
+		 */
+		public static final String ARCHIVE = "zip|rar|7z|cab|tgz|tar.gz|tar.xz|lz|deb";
+	}
+
+	static {
 		ERRORS.put(2, "您输入的帐号不存在！");
 		ERRORS.put(4, "您输入的帐号或密码有误！");
 		ERRORS.put(6, "账号异常！");
 		ERRORS.put(7, "您输入的密码不正确！");
 		ERRORS.put(257, "请输入验证码！");
 		ERRORS.put(120021, "您的帐号可能存在安全隐患，为保障您的帐号安全，请验证后登录。");
-
-//		DEFAULT_HEADERS.add(new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.104 Safari/537.36"));
-
-		DEFAULT_HEADERS.add(new BasicHeader("Cookie",StringUtils.join(CookieUtil.cookies,"; ")));
-
-
 	}
 
 	public static void main(String[] args) {
-		System.out.println(FontAwesome.HOME.value);
+		System.out.println("zip".matches("zip|rar|7z|cab|tgz|tar.gz|tar.xz|lz|deb"));
 	}
 }

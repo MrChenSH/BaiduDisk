@@ -1,199 +1,168 @@
 package com.csh.http;
 
 
+import cn.hutool.core.util.CharsetUtil;
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.csh.model.BaiduFile;
 import com.csh.utils.Constant;
+import com.csh.utils.CookieUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.*;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RequestProxy {
 
-    private static Logger logger = Logger.getLogger(RequestProxy.class);
+	private static final Logger logger = Logger.getLogger(RequestProxy.class);
 
-    public static JSONObject yunData = new JSONObject();
+	public static JSONObject YUN_DATA = new JSONObject();
 
-    // 连接管理器
-    private static PoolingHttpClientConnectionManager pool;
+	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private static CloseableHttpClient httpClient = null;
+	private static final File JSON_FILE = new File(System.getProperty("user.dir") + "/config/yunData.json");
 
-    private static HttpClientContext context = null;
+	static {
+		try {
+			if (!JSON_FILE.exists()) {
+				JSON_FILE.getParentFile().mkdir();
+				JSON_FILE.createNewFile();
+			}
+			YUN_DATA = JSONUtil.readJSONObject(JSON_FILE, CharsetUtil.CHARSET_UTF_8);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
 
-    // 请求配置
-    private static RequestConfig requestConfig;
+	public static void setYunData(JSONObject yunData) {
+		FileWriter writer = null;
+		try {
+			writer = new FileWriter(JSON_FILE);
 
-    private static final String TOKEN_KEY = "MYBDSTOKEN";
+			(RequestProxy.YUN_DATA = yunData).write(writer, 4, 0);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		} finally {
+			if (writer != null) {
+				try {
+					writer.flush();
+					writer.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
 
-    private static ObjectMapper mapper = new ObjectMapper();
+	private static HttpResponse httpGet(String url, Map<String, Object> params) {
+		return HttpRequest.get(url).cookie(CookieUtil.COOKIE_STR).form(params).execute();
+	}
 
-    private static final File jsonFile = new File(System.getProperty("user.dir") + "/config/yunData.json");
+	/**
+	 * 获取网盘容量使用信息
+	 *
+	 * @return
+	 */
+	public static JSONObject getQuotaInfos() {
+		Map<String, Object> params = new HashMap<String, Object>() {{
+			put("checkexpire", 1);
+			put("checkfree", 1);
+			put("channel", "chunlei");
+			put("web", 1);
+			put("appid", 250528);
+			put("clienttype", 0);
+			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
+			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+		}};
 
-    static {
-        try {
-            context = HttpClientContext.create();
+		HttpResponse rs = httpGet(Constant.QUOTA_URL, params);
 
-            // 配置超时时间（连接服务端超时1秒，请求数据返回超时60秒）
-            requestConfig = RequestConfig.custom()
-                    .setSocketTimeout(60000)
-                    .setConnectTimeout(120000)
-                    .setConnectionRequestTimeout(60000).build();
+		try {
+			return JSONUtil.parseObj(rs.body());
+		} finally {
+			if (rs != null) rs.close();
+		}
+	}
 
-            // 设置默认跳转以及存储cookie
-            httpClient = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(requestConfig)
-                    .setDefaultHeaders(Constant.DEFAULT_HEADERS)
-                    .setRedirectStrategy(new DefaultRedirectStrategy())
-                    .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy()).build();
+	public static List<BaiduFile> getFileList(String path) throws Exception {
+		Map<String, Object> params = new HashMap<String, Object>() {{
+			put("dir", path);
+			put("order", "name");
+			put("desc", 0);
+			put("clienttype", 0);
+			put("showempty", 0);
+			put("web", 1);
+			put("channel", "chunlei");
+			put("appid", 250528);
+			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
+			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+		}};
 
-            if (!jsonFile.exists()) {
-                jsonFile.getParentFile().mkdir();
-                jsonFile.createNewFile();
-            }
+		HttpResponse rs = httpGet(Constant.LIST_URL, params);
 
-            RequestProxy.yunData = mapper.readValue(jsonFile, JSONObject.class);
+		try {
+			JSONObject json = JSONUtil.parseObj(rs.body());
 
-        } catch (IOException e) {
-            logger.error(e);
-        }
-    }
+			logger.info(json.toJSONString(4));
 
-    public static void setYunData(JSONObject yunData) {
-        try {
-            RequestProxy.yunData = yunData;
-            mapper.writeValue(jsonFile, yunData);
-        } catch (IOException e) {
-            logger.error(e);
-        }
-    }
+			if (json.containsKey("list")) {
+				JavaType javaType = MAPPER.getTypeFactory().constructParametricType(List.class, BaiduFile.class);
 
-    /**
-     * 获取网盘容量使用信息
-     *
-     * @return
-     * @throws Exception
-     */
-    public static JSONObject getQuotaInfos() throws Exception {
+				List<BaiduFile> baiduFiles = MAPPER.readValue(json.getJSONArray("list").toString(), javaType);
 
-        List<NameValuePair> params = new ArrayList<>();
+				return baiduFiles;
+			} else {
+				logger.error("文件列表获取失败！");
+				logger.error(json.toString());
+				throw new RuntimeException("文件列表获取失败！");
+			}
+		} finally {
+			if (rs != null) rs.close();
+		}
+	}
 
-        params.add(new BasicNameValuePair("checkexpire", "1"));
-        params.add(new BasicNameValuePair("checkfree", "1"));
-        params.add(new BasicNameValuePair("channel", "chunlei"));
-        params.add(new BasicNameValuePair("web", "1"));
-        params.add(new BasicNameValuePair("appid", "250528"));
-        params.add(new BasicNameValuePair("clienttype", "0"));
-        params.add(new BasicNameValuePair("bdstoken", yunData.getString(TOKEN_KEY)));
-        params.add(new BasicNameValuePair("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw=="));
+	public static List<BaiduFile> searchFileList(String keyword) throws Exception {
+		Map<String, Object> params = new HashMap<String, Object>() {{
+			put("recursion", 1);
+			put("order", "name");
+			put("desc", 0);
+			put("clienttype", 0);
+			put("showempty", 0);
+			put("web", 1);
+			put("key", keyword);
+			put("channel", "chunlei");
+			put("appid", 250528);
+			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
+			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+		}};
 
-        HttpGet httpGet = new HttpGet(Constant.QUOTA_URL + URLEncodedUtils.format(params, Constant.CHARSET_UTF_8));
+		HttpResponse rs = httpGet(Constant.SEARCH_URL, params);
 
-        CloseableHttpResponse response = httpClient.execute(httpGet, context);
+		try {
+			JSONObject json = JSONUtil.parseObj(rs.body());
 
-        try {
-            return JSONObject.fromObject(EntityUtils.toString(response.getEntity()));
-        } finally {
-            if (response != null) response.close();
-        }
-    }
+			logger.info(json.toJSONString(4));
 
-    public static List<BaiduFile> getFileList(String path) throws Exception {
-        List<NameValuePair> params = new ArrayList<>();
+			if (json.containsKey("list")) {
+				JavaType javaType = MAPPER.getTypeFactory().constructParametricType(List.class, BaiduFile.class);
 
-        params.add(new BasicNameValuePair("dir", path));
-        params.add(new BasicNameValuePair("order", "name"));
-        params.add(new BasicNameValuePair("desc", "0"));
-        params.add(new BasicNameValuePair("clienttype", "0"));
-        params.add(new BasicNameValuePair("showempty", "0"));
-        params.add(new BasicNameValuePair("web", "1"));
-        params.add(new BasicNameValuePair("channel", "chunlei"));
-        params.add(new BasicNameValuePair("appid", "250528"));
-        params.add(new BasicNameValuePair("bdstoken", yunData.getString(TOKEN_KEY)));
-        params.add(new BasicNameValuePair("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw=="));
+				List<BaiduFile> baiduFiles = MAPPER.readValue(json.getJSONArray("list").toString(), javaType);
 
-        HttpGet httpGet = new HttpGet(Constant.LIST_URL + URLEncodedUtils.format(params, Constant.CHARSET_UTF_8));
-
-        CloseableHttpResponse response = httpClient.execute(httpGet, context);
-
-        try {
-            JSONObject json = JSONObject.fromObject(EntityUtils.toString(response.getEntity()));
-
-            System.out.println(json.toString(1));
-
-            if (json.has("list")) {
-
-                JavaType javaType = mapper.getTypeFactory().constructParametricType(List.class, BaiduFile.class);
-
-                List<BaiduFile> baiduFiles = mapper.readValue(json.getJSONArray("list").toString(), javaType);
-
-                return baiduFiles;
-            } else {
-                throw new RuntimeException("文件列表获取失败！");
-            }
-
-        } finally {
-            if (response != null) response.close();
-        }
-
-    }
-
-    public static List<BaiduFile> searchFileList(String keyword) throws Exception {
-        List<NameValuePair> params = new ArrayList<>();
-
-        params.add(new BasicNameValuePair("recursion", "1"));
-        params.add(new BasicNameValuePair("order", "name"));
-        params.add(new BasicNameValuePair("desc", "0"));
-        params.add(new BasicNameValuePair("showempty", "0"));
-        params.add(new BasicNameValuePair("web", "1"));
-//        params.add(new BasicNameValuePair("page", "1"));
-//        params.add(new BasicNameValuePair("num", "100"));
-        params.add(new BasicNameValuePair("key", keyword));
-        params.add(new BasicNameValuePair("channel", "chunlei"));
-        params.add(new BasicNameValuePair("appid", "250528"));
-        params.add(new BasicNameValuePair("bdstoken", yunData.getString(TOKEN_KEY)));
-        params.add(new BasicNameValuePair("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw=="));
-        params.add(new BasicNameValuePair("clienttype", "0"));
-
-        HttpGet httpGet = new HttpGet(Constant.SEARCH_URL + URLEncodedUtils.format(params, Constant.CHARSET_UTF_8));
-
-        CloseableHttpResponse response = httpClient.execute(httpGet, context);
-
-        try {
-            JSONObject json = JSONObject.fromObject(EntityUtils.toString(response.getEntity()));
-
-            System.out.println(json.toString(1));
-
-            if (json.has("list")) {
-
-                JavaType javaType = mapper.getTypeFactory().constructParametricType(List.class, BaiduFile.class);
-
-                List<BaiduFile> baiduFiles = mapper.readValue(json.getJSONArray("list").toString(), javaType);
-
-                return baiduFiles;
-            } else {
-                throw new RuntimeException("文件列表获取失败！");
-            }
-
-        } finally {
-            if (response != null) response.close();
-        }
-
-    }
+				return baiduFiles;
+			} else {
+				logger.error("文件列表获取失败！");
+				logger.error(json.toString());
+				throw new RuntimeException("文件列表获取失败！");
+			}
+		} finally {
+			if (rs != null) rs.close();
+		}
+	}
 }
