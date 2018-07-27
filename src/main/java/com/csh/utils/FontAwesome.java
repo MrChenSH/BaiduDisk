@@ -32,7 +32,7 @@ public enum FontAwesome {
     SHARE_ALT("\uf1e0");
 
 
-    public String value;
+    public final String value;
 
     FontAwesome(String value) {
         this.value = value;
