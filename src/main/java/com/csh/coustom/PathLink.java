@@ -3,8 +3,6 @@ package com.csh.coustom;
 import com.csh.utils.FontAwesome;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
-import javafx.scene.text.Font;
 
 public class PathLink extends Hyperlink {
 

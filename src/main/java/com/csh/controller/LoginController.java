@@ -1,7 +1,6 @@
 package com.csh.controller;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.map.MapUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.csh.app.App;
@@ -33,12 +32,6 @@ public class LoginController implements Initializable {
 
 	private WebEngine engine;
 
-	private App app;
-
-	public void setApp(App app) {
-		this.app = app;
-	}
-
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		try {
@@ -58,16 +51,17 @@ public class LoginController implements Initializable {
 						JSONObject yunData = JSONUtil.parseObj(obj);
 
 						if (CollectionUtil.isNotEmpty(yunData)) {
-							String strs = CookieHandler.getDefault().get(uri, headers).get("Cookie").get(0);
+							List<String> cookies = CookieHandler.getDefault().get(uri, headers).get("Cookie");
 
 							RequestProxy.setYunData(yunData);
-							CookieUtil.setCookies(strs.split("; "));
-
+							CookieUtil.setCookies(cookies.get(0).split("; "));
 							Platform.runLater(() -> {
 								try {
-									app.getPrimaryStage().hide();
-									app.generateMainPanel();
-									app.getPrimaryStage().show();
+									App.primaryStage.hide();
+									App.generateMainPanel();
+									App.primaryStage.show();
+									// 清除Cookie
+									CookieHandler.getDefault().get(uri, headers).clear();
 								} catch (Exception e) {
 									logger.error(e.getMessage(), e);
 								}

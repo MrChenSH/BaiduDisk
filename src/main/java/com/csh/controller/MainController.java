@@ -2,10 +2,12 @@ package com.csh.controller;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.csh.app.App;
 import com.csh.coustom.IconButton;
 import com.csh.coustom.PathLink;
+import com.csh.coustom.ShareDialog;
 import com.csh.http.RequestProxy;
 import com.csh.model.BaiduFile;
 import com.csh.utils.Constant;
@@ -14,38 +16,29 @@ import com.csh.utils.FontAwesome;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.CookieHandler;
-import java.net.URI;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class MainController extends BorderPane implements Initializable {
@@ -65,10 +58,19 @@ public class MainController extends BorderPane implements Initializable {
 	private Label quotaText;
 
 	@FXML
-	private Button loginBtn;
+	private Button logoutBtn;
 
 	@FXML
 	private IconButton uploadBtn;
+
+	@FXML
+	private IconButton downloadBtn;
+
+	@FXML
+	private IconButton shareBtn;
+
+	@FXML
+	private IconButton deleteBtn;
 
 	@FXML
 	private PathLink backBtn;
@@ -124,26 +126,16 @@ public class MainController extends BorderPane implements Initializable {
 	@FXML
 	private IconButton nextBtn;
 
-	private App app;
-
 	private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
-
-	public App getApp() {
-		return app;
-	}
-
-	public void setApp(App app) {
-		this.app = app;
-	}
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		if (StrUtil.isBlank(CookieUtil.COOKIE_STR) || CollectionUtil.isEmpty(RequestProxy.YUN_DATA)) {
 			Platform.runLater(() -> {
 				try {
-					app.getPrimaryStage().hide();
-					app.generateLoginPanel();
-					app.getPrimaryStage().show();
+					App.primaryStage.hide();
+					App.generateLoginPanel();
+					App.primaryStage.show();
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				}
@@ -151,14 +143,21 @@ public class MainController extends BorderPane implements Initializable {
 		} else {
 			try {
 				fileTable.setPlaceholder(new Label("正在登录，请稍候……"));
+				fileTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 				fileTable.itemsProperty().addListener((observable, oldValue, newValue) -> {
-					if (newValue != null) fileCount.setText(newValue.size() + "项");
+					if (CollectionUtil.isEmpty(newValue)) {
+						fileTable.setPlaceholder(null);
+						fileCount.setText("0项");
+					} else fileCount.setText(newValue.size() + "项");
 				});
 
 				checkBoxColumn.setCellValueFactory(new PropertyValueFactory("checked"));
 				checkBoxColumn.setCellFactory(colums -> new TableCell<BaiduFile, Boolean>() {
 					@Override
 					protected void updateItem(Boolean checked, boolean empty) {
+						ObservableList<BaiduFile> items = fileTable.getItems();
+						if (CollectionUtil.isEmpty(items)) return;
+
 						TableRow<BaiduFile> row = this.getTableRow();
 						if (row != null) {
 							BaiduFile item = row.getItem();
@@ -166,17 +165,21 @@ public class MainController extends BorderPane implements Initializable {
 								this.setGraphic(null);
 							} else {
 								CheckBox checkBox = new CheckBox();
+								checkBox.setFocusTraversable(false);
 								// 属性绑定
 								checkBox.selectedProperty().bindBidirectional(item.checkedProperty());
 
-								ObservableList<BaiduFile> items = fileTable.getItems();
+								int checkeds = getCheckeds().size();
+								checkAllBox.setSelected(checkeds == items.size());
+								checkAllBox.setIndeterminate(checkeds != 0 && checkeds < items.size());
 
-								checkBox.setOnAction(event -> {
-									int checkeds = items.filtered(file -> file.getChecked()).size();
-									checkAllBox.setSelected(checkeds == items.size());
-									checkAllBox.setIndeterminate(checkeds != 0 && checkeds < items.size());
-								});
-
+//								fileTable.requestFocus();
+//								row.updateSelected(checked);
+//								if (checked) {
+//									fileTable.getSelectionModel().select(row.getIndex());
+//								} else {
+//									fileTable.getSelectionModel().clearSelection(row.getIndex());
+//								}
 								this.setGraphic(checkBox);
 								this.setAlignment(Pos.CENTER);
 							}
@@ -203,89 +206,94 @@ public class MainController extends BorderPane implements Initializable {
 											BorderPane pane = (BorderPane) this.getGraphic();
 											Node center = pane.getCenter();
 
-											editor.onKeyPressedProperty().set(event -> {
-												if (event.getCode().equals(KeyCode.ENTER)) {
-													item.setFileName(editor.getText());
-													pane.setCenter(center);
-												}
+											editor.setOnAction(event -> {
+												pane.setCenter(center);
+												JSONArray fileList = new JSONArray();
+												fileList.add(new JSONObject() {{
+													put("path", item.getPath());
+													put("newname", editor.getText());
+												}});
+												boolean success = RequestProxy.manager(Constant.Operate.RENAME, fileList);
+												if (success) item.setFileName(editor.getText());
 											});
 
 											editor.focusedProperty().addListener((observable, oldValue, newValue) -> {
-												if (newValue == false) {
-													item.setFileName(editor.getText());
-													pane.setCenter(center);
-												}
+												if (!newValue) pane.setCenter(center);
 											});
 
 											pane.setCenter(editor);
 											editor.requestFocus();
-											editor.selectAll();
+											if (item.isDir()) editor.selectAll();
+											else editor.selectRange(0, item.getFileName().lastIndexOf('.'));
 										} else {
-											Label nameLabel = new Label(name);
-											Label icon = new Label();
+											PathLink nameLabel = new PathLink(name, item.getPath());
 											Label share = new Label(FontAwesome.SHARE_ALT.value);
 											Label download = new Label(FontAwesome.DOWNLOAD.value);
 											Label delete = new Label(FontAwesome.TRASH.value);
 
 											if (item.isDir()) {
-												icon.setText(FontAwesome.FOLDER_OPEN.value);
+												nameLabel.setIcon(FontAwesome.FOLDER_OPEN);
 											} else {
 												String suffix = name.substring(name.lastIndexOf(".") + 1).toLowerCase();
 
 												if (suffix.equals("txt")) {
-													icon.setText(FontAwesome.FILE_TEXT.value);
+													nameLabel.setIcon(FontAwesome.FILE_TEXT);
 												} else if (suffix.equals("apk")) {
-													icon.setText(FontAwesome.ANDROID.value);
+													nameLabel.setIcon(FontAwesome.ANDROID);
 												} else if (suffix.equals("pdf")) {
-													icon.setText(FontAwesome.FILE_PDF.value);
-												} else if (suffix.equals("font")) {
-													icon.setText(FontAwesome.FONT.value);
+													nameLabel.setIcon(FontAwesome.FILE_PDF);
+												} else if (suffix.matches("font|ttf")) {
+													nameLabel.setIcon(FontAwesome.FONT);
 												} else if (suffix.matches("doc|docx")) {
-													icon.setText(FontAwesome.FILE_WORD.value);
+													nameLabel.setIcon(FontAwesome.FILE_WORD);
 												} else if (suffix.matches("xls|xlsx")) {
-													icon.setText(FontAwesome.FILE_EXCEL.value);
+													nameLabel.setIcon(FontAwesome.FILE_EXCEL);
 												} else if (suffix.matches("ppt|pptx")) {
-													icon.setText(FontAwesome.FILE_PPT.value);
+													nameLabel.setIcon(FontAwesome.FILE_PPT);
 												} else if (suffix.matches(Constant.FileType.IMAGE)) {
-													icon.setText(FontAwesome.FILE_IMAGE.value);
+													nameLabel.setIcon(FontAwesome.FILE_IMAGE);
 												} else if (suffix.matches(Constant.FileType.AUDIO)) {
-													icon.setText(FontAwesome.FILE_AUDIO.value);
+													nameLabel.setIcon(FontAwesome.FILE_AUDIO);
 												} else if (suffix.matches(Constant.FileType.ARCHIVE)) {
-													icon.setText(FontAwesome.FILE_ARCHIVE.value);
+													nameLabel.setIcon(FontAwesome.FILE_ARCHIVE);
 												} else if (suffix.matches(Constant.FileType.VIDEO)) {
-													icon.setText(FontAwesome.FILE_VIDEO.value);
+													nameLabel.setIcon(FontAwesome.FILE_VIDEO);
 												} else {
-													icon.setText(FontAwesome.FILE.value);
+													nameLabel.setIcon(FontAwesome.FILE);
 												}
 											}
 
+											nameLabel.setVisited(true);
+											nameLabel.setFocusTraversable(false);
 											nameLabel.setTooltip(new Tooltip(name));
-											nameLabel.getStyleClass().addAll("action-btn");
-											icon.getStyleClass().add("icon");
+											nameLabel.getStyleClass().add("action-btn");
+											nameLabel.setOnAction(homeLink.getOnAction());
+											nameLabel.setOnMousePressed(event -> {
+												fileTable.requestFocus();
+												fileTable.getSelectionModel().clearAndSelect(row.getIndex());
+											});
+
 											share.setVisible(false);
 											share.setTooltip(new Tooltip("分享文件"));
 											share.getStyleClass().addAll("icon", "action-btn");
+
 											download.setVisible(false);
 											download.setTooltip(new Tooltip("下载文件"));
 											download.getStyleClass().addAll("icon", "action-btn");
+
 											delete.setVisible(false);
 											delete.setTooltip(new Tooltip("删除文件"));
 											delete.getStyleClass().addAll("icon", "action-btn");
 
 											HBox actionBox = new HBox(share, download, delete);
 
+											actionBox.setAlignment(Pos.CENTER);
+
 											BorderPane borderPane = new BorderPane();
 
-											borderPane.setLeft(icon);
 											borderPane.setCenter(nameLabel);
 											borderPane.setRight(actionBox);
 											BorderPane.setAlignment(nameLabel, Pos.CENTER_LEFT);
-
-											nameLabel.setOnMouseClicked(event -> {
-												if (event.getButton().equals(MouseButton.PRIMARY)) {
-													onClickToOpenFile(new ActionEvent(row, row));
-												}
-											});
 
 											this.setGraphic(borderPane);
 										}
@@ -336,30 +344,27 @@ public class MainController extends BorderPane implements Initializable {
 						}
 				);
 
-                /*fileTable.setRowFactory(tableView ->
-                {
-                    TableRow<BaiduFile> row = new TableRow<>();
+				/*fileTable.setRowFactory(tableView -> {
+					TableRow<BaiduFile> row = new TableRow<>();
 
-                    return row;
-                });*/
+					row.selectedProperty().addListener((observable, oldValue, newValue) -> {
+						row.getItem().setChecked(newValue);
+					});
+					return row;
+				});*/
 
 
 				Platform.runLater(() -> {
-					try {
-						JSONObject info = RequestProxy.getQuotaInfos();
-						if (new Integer(0).equals(info.getInt("errno"))) {
-							userLabel.setText(RequestProxy.YUN_DATA.getStr(Constant.NAME_KEY));
-							userImage.setImage(new Image(RequestProxy.YUN_DATA.getStr(Constant.AVATAR_KEY)));
-							double used = info.getDouble("used");
-							double total = info.getDouble("total");
-							quotaBar.setProgress(used / total);
-							quotaText.setText(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "GB/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "GB");
+					JSONObject info = RequestProxy.getQuotaInfos();
 
-							this.loadTableData("/");
-						}
-					} catch (Exception e) {
-						logger.error(e.getMessage(), e);
-					}
+					userLabel.setText(RequestProxy.YUN_DATA.getStr(Constant.NAME_KEY));
+					userImage.setImage(new Image(RequestProxy.YUN_DATA.getStr(Constant.AVATAR_KEY)));
+					double used = info.getDouble("used");
+					double total = info.getDouble("total");
+					quotaBar.setProgress(used / total);
+					quotaText.setText(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "GB/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "GB");
+
+					this.loadTableData("/");
 				});
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
@@ -371,13 +376,87 @@ public class MainController extends BorderPane implements Initializable {
 	private void onClickToUpload() {
 		FileChooser chooser = new FileChooser();
 
-		List<File> files = chooser.showOpenMultipleDialog(this.app.getPrimaryStage());
+		List<File> files = chooser.showOpenMultipleDialog(App.primaryStage);
 
 		System.out.println(files);
 	}
 
 	@FXML
 	private void onClickToDownload() {
+
+	}
+
+	@FXML
+	private void onClickToShare() {
+		List<BaiduFile> checkeds = this.getCheckeds();
+		if (CollectionUtil.isEmpty(checkeds)) {
+			Alert alert = new Alert(Alert.AlertType.INFORMATION);
+			alert.setTitle("系统提示");
+			alert.initOwner(App.primaryStage);
+			alert.setHeaderText("请至少选择一个文件！");
+			alert.show();
+		} else {
+			StringBuilder sb = new StringBuilder();
+			ShareDialog shareDialog = new ShareDialog();
+			shareDialog.show();
+			shareDialog.setOnCloseRequest(event -> {
+				if (ButtonBar.ButtonData.OK_DONE.equals(shareDialog.getResult().getButtonData())) {
+					// 阻止对话框关闭
+					event.consume();
+
+					if ("创建链接".equals(shareDialog.getResult().getText())) {
+						Object[] ids = checkeds.stream().map(item -> item.getId()).toArray();
+						JSONObject rs = RequestProxy.share(new JSONArray(ids), shareDialog.isPrivate(), shareDialog.getPeriod());
+						String link = rs.getStr("link"), pwd = rs.getStr("pwd");
+						shareDialog.createShareInfoPane(link, pwd);
+						if (shareDialog.isPrivate()) {
+							sb.append("链接：").append(link).append(" 密码：").append(pwd);
+						} else {
+							sb.append(link);
+						}
+					} else {
+						// 获取系统剪切板
+						Clipboard clipboard = Clipboard.getSystemClipboard();
+
+						// 剪切板内容存放对象
+						ClipboardContent content = new ClipboardContent();
+						content.putString(sb.toString());
+						// 将内容放入剪切板
+						clipboard.setContent(content);
+					}
+				}
+
+			});
+		}
+	}
+
+	@FXML
+	private void onClickToDelete() {
+		List<BaiduFile> checkeds = this.getCheckeds();
+
+		if (CollectionUtil.isEmpty(checkeds)) {
+			Alert alert = new Alert(Alert.AlertType.INFORMATION);
+			alert.setTitle("系统提示");
+			alert.initOwner(App.primaryStage);
+			alert.setHeaderText("请至少选择一个文件！");
+			alert.show();
+		} else {
+			Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+			alert.setTitle("系统提示");
+			alert.initOwner(App.primaryStage);
+			alert.setHeaderText("确认要把所选文件放入回收站吗？\n删除的文件可在10天内通过回收站还原");
+			Optional<ButtonType> optional = alert.showAndWait();
+
+			if (ButtonType.OK.equals(optional.get())) {
+				Object[] paths = checkeds.stream().map(item -> item.getPath()).toArray();
+				boolean success = RequestProxy.manager(Constant.Operate.DELETE, new JSONArray(paths));
+				if (success) {
+					fileTable.getItems().removeAll(checkeds);
+					fileTable.getSelectionModel().clearSelection();
+					this.checkAll(false);
+				}
+			}
+		}
 
 	}
 
@@ -390,22 +469,25 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	@FXML
-	private void onClickToLogin(ActionEvent event) throws IOException {
-		Stage stage = new Stage();
-		stage.setTitle("用户登录");
-		stage.initOwner(app.getPrimaryStage());
-		stage.initModality(Modality.APPLICATION_MODAL);
-		WebView webView = new WebView();
-		URI uri = URI.create(Constant.BASE_URL);
+	private void onClickToLogout() {
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("系统提示");
+		alert.setHeaderText("您确定退出登录吗？");
+		alert.initOwner(App.primaryStage);
+		ButtonType buttonType = alert.showAndWait().get();
 
-		Map<String, List<String>> headers = new LinkedHashMap<>();
-		headers.put("Set-Cookie", CookieUtil.COOKIES);
-		CookieHandler.getDefault().put(uri, headers);
-
-		webView.getEngine().load(Constant.BASE_URL);
-		stage.setScene(new Scene(webView));
-//		stage.centerOnScreen();
-		stage.show();
+		if (ButtonType.OK.equals(buttonType)) {
+			CookieUtil.setCookies();
+			Platform.runLater(() -> {
+				try {
+					App.primaryStage.hide();
+					App.generateLoginPanel();
+					App.primaryStage.show();
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+				}
+			});
+		}
 	}
 
 	/**
@@ -415,7 +497,7 @@ public class MainController extends BorderPane implements Initializable {
 	 */
 	@FXML
 	private void onClickToCheckAll() {
-		fileTable.getItems().forEach(baiduFile -> baiduFile.setChecked(checkAllBox.isSelected()));
+		this.checkAll(checkAllBox.isSelected());
 	}
 
 	@FXML
@@ -425,19 +507,19 @@ public class MainController extends BorderPane implements Initializable {
 
 	@FXML
 	private void onClickToOpenFile(ActionEvent event) {
-		if (event.getSource() instanceof PathLink) {
-			PathLink link = (PathLink) event.getSource();
-			ObservableList<Node> links = breadcrumb.getChildren();
+		Object source = event.getSource();
+		ObservableList<Node> links = breadcrumb.getChildren();
+
+		if (homeBtn.equals(source)) {
+			links.clear();
+			links.add(homeLink);
+			this.loadTableData(homeLink.getPath());
+		} else if (source instanceof PathLink && links.contains(source)) {
+			PathLink link = (PathLink) source;
 			int index = links.indexOf(link);
-
-			if (index + 1 < links.size()) this.loadTableData(link.getPath());
-
-			if (index < 0) {
-				links.clear();
-				links.add(homeLink);
-			} else {
-				links.remove(index + 1, links.size());
-			}
+			if (index == links.size() - 1) return;
+			this.loadTableData(link.getPath());
+			links.remove(index + 1, links.size());
 		} else {
 			BaiduFile item = fileTable.getSelectionModel().getSelectedItem();
 			if (item != null) {
@@ -449,7 +531,7 @@ public class MainController extends BorderPane implements Initializable {
 					link.setTooltip(new Tooltip(item.getFileName()));
 					link.getStyleClass().addAll(homeLink.getStyleClass());
 
-					breadcrumb.getChildren().addAll(new Label("/"), link);
+					links.addAll(new Label("/"), link);
 
 					this.loadTableData(item.getPath());
 				} else {
@@ -461,9 +543,8 @@ public class MainController extends BorderPane implements Initializable {
 						stage.setTitle(fileName);
 						stage.setWidth(600);
 						stage.setHeight(200);
-//						stage.initOwner(app.getPrimaryStage());
-//						stage.initModality(Modality.WINDOW_MODAL);
-//						stage.centerOnScreen();
+						stage.getIcons().addAll(App.primaryStage.getIcons());
+						stage.centerOnScreen();
 						stage.show();
 					}
 				}
@@ -499,7 +580,6 @@ public class MainController extends BorderPane implements Initializable {
 
 	@FXML
 	private void onTableContextMenu(ContextMenuEvent event) {
-		System.out.println(event);
 		if (event.getY() < 26) contextMenu.hide();
 	}
 
@@ -510,6 +590,28 @@ public class MainController extends BorderPane implements Initializable {
 		} else {
 
 		}
+	}
+
+	/**
+	 * 获取复选框选中的项目
+	 *
+	 * @return
+	 */
+	private FilteredList<BaiduFile> getCheckeds() {
+		ObservableList<BaiduFile> items = this.fileTable.getItems();
+		if (items == null) items = FXCollections.emptyObservableList();
+		return items.filtered(baiduFile -> baiduFile.getChecked());
+	}
+
+	/**
+	 * 全选
+	 *
+	 * @param checked 全选状态，为<code>true</code>时全选，<code>false</code>时取消全选
+	 */
+	private void checkAll(boolean checked) {
+		this.checkAllBox.setSelected(checked);
+		this.checkAllBox.setIndeterminate(false);
+		this.fileTable.getItems().forEach(item -> item.setChecked(checked));
 	}
 
 	/**
@@ -535,16 +637,18 @@ public class MainController extends BorderPane implements Initializable {
 		}
 
 		@Override
+		protected void done() {
+			Platform.runLater(() -> fileTable.setPlaceholder(null));
+			super.done();
+		}
+
+		@Override
 		protected ObservableList<BaiduFile> call() {
-			ObservableList<BaiduFile> list = FXCollections.emptyObservableList();
-			try {
-				if (isSearch) {
-					list = FXCollections.observableArrayList(RequestProxy.searchFileList(searchField.getText()));
-				} else {
-					list = FXCollections.observableArrayList(RequestProxy.getFileList(refreshBtn.getPath()));
-				}
-			} catch (Exception e) {
-				Platform.runLater(() -> fileTable.setPlaceholder(new Label(e.getMessage())));
+			ObservableList<BaiduFile> list;
+			if (isSearch) {
+				list = FXCollections.observableArrayList(RequestProxy.searchFileList(searchField.getText()));
+			} else {
+				list = FXCollections.observableArrayList(RequestProxy.getFileList(refreshBtn.getPath()));
 			}
 			return list;
 		}

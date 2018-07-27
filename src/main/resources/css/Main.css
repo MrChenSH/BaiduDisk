@@ -81,7 +81,7 @@
 	-fx-padding: 3 5;
 }
 
-.check-box{
+.check-box {
 	-fx-border-color: transparent;
 }
 
@@ -104,7 +104,7 @@
 }
 
 .action-btn:hover {
-	-fx-text-fill: #0096c9 !important;
+	-fx-text-fill: #0096c9;
 }
 
 #search_field, #file_table {
@@ -131,4 +131,9 @@
 
 .table-row-cell:hover .action-btn, .table-row-cell:selected .action-btn {
 	visibility: visible;
+}
+
+.table-row-cell:hover {
+	-fx-background-insets: 0, 1, 2;
+	-fx-background-color: -fx-background, -fx-cell-focus-inner-border, -fx-background;
 }
