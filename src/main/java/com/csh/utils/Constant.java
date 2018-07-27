@@ -53,6 +53,16 @@ public final class Constant {
 	public static final String SEARCH_URL = "https://pan.baidu.com/api/search?";
 
 	/**
+	 * 网盘文件管理URL，重命名、删除等操作
+	 */
+	public static final String MANAGER_URL = "https://pan.baidu.com/api/filemanager?";
+
+	/**
+	 * 网盘分享URL
+	 */
+	public static final String SHARE_URL = "https://pan.baidu.com/share/set?";
+
+	/**
 	 * 获取公钥URL
 	 */
 	public static final String PASS_PUBKEY_URL = "https://passport.baidu.com/v2/getpublickey?";
@@ -84,10 +94,27 @@ public final class Constant {
 	 */
 	public static final String WAP_PASS_URL = "https://wappass.baidu.com/passport?login&authsite=1&tpl=netdisk&overseas=1&regdomestic=1&smsLoginLink=1&display=mobile&u=https%3A%2F%2Fpan.baidu.com%2Fwap%2Fhome%3FrealName%3D1";
 
+	public static final Integer SUCCEED = 0;
+
 	/**
 	 * 错误信息集合
 	 */
 	public static final Map<Integer, String> ERRORS = new HashMap<>();
+
+	/**
+	 * 网盘文件操作
+	 */
+	public final class Operate {
+		/**
+		 * 重命名
+		 */
+		public static final String RENAME = "rename";
+
+		/**
+		 * 删除
+		 */
+		public static final String DELETE = "delete";
+	}
 
 	/**
 	 * 文件类型
