@@ -4,7 +4,6 @@ package com.csh.coustom;
 import com.csh.utils.FontAwesome;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.text.Font;
 
 
 public class IconButton extends Button {
@@ -32,5 +31,14 @@ public class IconButton extends Button {
 
 	public IconButton(String text) {
 		super(text);
+	}
+
+	public IconButton(FontAwesome icon) {
+		this.setIcon(icon);
+	}
+
+	public IconButton(String text, FontAwesome icon) {
+		super(text);
+		this.setIcon(icon);
 	}
 }
