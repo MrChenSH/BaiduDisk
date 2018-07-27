@@ -6,10 +6,9 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.JavaFXBuilderFactory;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.text.Font;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 
@@ -19,31 +18,24 @@ public class App extends Application {
 
 	private static final Logger logger = Logger.getLogger(App.class);
 
-	private Stage primaryStage;
+	public static Stage primaryStage;
 
-	public Stage getPrimaryStage() {
-		return primaryStage;
-	}
-
-	public void setPrimaryStage(Stage primaryStage) {
-		this.primaryStage = primaryStage;
-	}
+	public static Font FontAwesome;
 
 	static {
-		Font.loadFont(App.class.getResourceAsStream("/fonts/fontawesome.ttf"), 16);
+		FontAwesome = Font.loadFont(App.class.getResourceAsStream("/fonts/fontawesome.ttf"), 16);
 	}
 
 	@Override
 	public void start(Stage primaryStage) {
 		logger.info("程序启动中，请稍候……");
 		try {
-			this.setPrimaryStage(primaryStage);
-			((MainController) this.loadFXML("/fxml/Main.fxml")).setApp(this);
-			Rectangle2D bounds = Screen.getPrimary().getBounds();
-
+			this.primaryStage = primaryStage;
+			this.loadFXML("/fxml/Main.fxml");
+//			generateLoginPanel();
 			primaryStage.setTitle("百度网盘");
-			//		primaryStage.setMinWidth(bounds.getWidth() * 3 / 5);
-			//		primaryStage.setMinHeight(bounds.getHeight() * 0.75);
+			primaryStage.centerOnScreen();
+			primaryStage.getIcons().add(new Image("/icon/BaiduNetdisk.png"));
 			primaryStage.show();
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
@@ -57,12 +49,9 @@ public class App extends Application {
 	 * @return
 	 * @throws Exception
 	 */
-	public LoginController generateLoginPanel() throws Exception {
-//        primaryStage.setResizable(false);
+	public static LoginController generateLoginPanel() throws Exception {
 		primaryStage.setTitle("百度网盘 - 登录");
-		LoginController controller = (LoginController) this.loadFXML("/fxml/Login.fxml");
-		controller.setApp(this);
-		return controller;
+		return (LoginController) loadFXML("/fxml/Login.fxml");
 	}
 
 	/**
@@ -71,11 +60,9 @@ public class App extends Application {
 	 * @return
 	 * @throws Exception
 	 */
-	public MainController generateMainPanel() throws Exception {
+	public static MainController generateMainPanel() throws Exception {
 		primaryStage.setTitle("百度网盘");
-		MainController controller = (MainController) this.loadFXML("/fxml/Main.fxml");
-		controller.setApp(this);
-		return controller;
+		return (MainController) loadFXML("/fxml/Main.fxml");
 	}
 
 	/**
@@ -85,7 +72,7 @@ public class App extends Application {
 	 * @return
 	 * @throws Exception
 	 */
-	private Initializable loadFXML(String fxml) throws Exception {
+	private static Initializable loadFXML(String fxml) throws Exception {
 		FXMLLoader loader = new FXMLLoader();
 		InputStream in = App.class.getResourceAsStream(fxml);
 		try {
