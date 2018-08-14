@@ -14,24 +14,18 @@ public final class Constant {
 
 	public static final long M_BYTE_MAX_SIZE = 1024 * 1024 * 1024;
 
-	public static final String CONTENT_TYPE_TEXT_HTML = "text/xml;charset=utf-8";
-
-	public static final String CONTENT_TYPE_FORM_URL = "application/x-www-form-urlencoded";
-
-	public static final String CONTENT_TYPE_JSON_URL = "application/json;charset=utf-8";
-
 	/**
 	 * yunData中保存的百度token的key值
 	 */
-	public static final String TOKEN_KEY = "MYBDSTOKEN";
+	public static final String TOKEN_KEY = "bdstoken";
 	/**
 	 * yunData中保存的用户名的key值
 	 */
-	public static final String NAME_KEY = "MYNAME";
+	public static final String NAME_KEY = "username";
 	/**
 	 * yunData中保存的用户头像的key值
 	 */
-	public static final String AVATAR_KEY = "MYAVATAR";
+	public static final String AVATAR_KEY = "photo";
 
 	public static final String BASE_URL = "https://pan.baidu.com/";
 
@@ -63,36 +57,9 @@ public final class Constant {
 	public static final String SHARE_URL = "https://pan.baidu.com/share/set?";
 
 	/**
-	 * 获取公钥URL
+	 * 获取下载链接URL
 	 */
-	public static final String PASS_PUBKEY_URL = "https://passport.baidu.com/v2/getpublickey?";
-
-	public static final String PASS_API_URL = "https://passport.baidu.com/v2/api/?";
-
-	/**
-	 * 登录URL
-	 */
-	public static final String PASS_LOGIN_URL = "https://passport.baidu.com/v2/api/?login";
-
-	/**
-	 * 获取验证码URL
-	 */
-	public static final String PASS_VERIFY_CODE_URL = "https://passport.baidu.com/cgi-bin/genimage?";
-
-	/**
-	 * 校验验证码URL
-	 */
-	public static final String PASS_CHECK_VERIFY_CODE_URL = "https://passport.baidu.com/v2/?checkvcode&";
-
-	/**
-	 * 登录后跳转URL
-	 */
-	public static final String PASS_V3_JUMP_URL = "https://pan.baidu.com/res/static/thirdparty/pass_v3_jump.html?";
-
-	/**
-	 * App端登录页面地址
-	 */
-	public static final String WAP_PASS_URL = "https://wappass.baidu.com/passport?login&authsite=1&tpl=netdisk&overseas=1&regdomestic=1&smsLoginLink=1&display=mobile&u=https%3A%2F%2Fpan.baidu.com%2Fwap%2Fhome%3FrealName%3D1";
+	public static final String DOWNLOAD_URL = "https://pan.baidu.com/api/download?";
 
 	public static final Integer SUCCEED = 0;
 
