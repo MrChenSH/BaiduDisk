@@ -1,6 +1,8 @@
 package com.csh.http;
 
 
+import cn.hutool.core.codec.Base64;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpRequest;
@@ -9,21 +11,25 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.csh.app.App;
+import cn.hutool.script.JavaScriptEngine;
+import cn.hutool.script.ScriptUtil;
+import com.csh.coustom.dialog.MessageDialog;
 import com.csh.model.BaiduFile;
 import com.csh.utils.Constant;
 import com.csh.utils.CookieUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.beans.property.*;
+import javafx.scene.image.Image;
 import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RequestProxy {
 
@@ -31,57 +37,74 @@ public class RequestProxy {
 
 	public static JSONObject YUN_DATA = new JSONObject();
 
+	public static StringProperty usernameProperty = new SimpleStringProperty();
+
+	public static ObjectProperty<Image> photoProperty = new SimpleObjectProperty<>();
+
+	public static StringProperty quotaTextProperty = new SimpleStringProperty();
+
+	public static DoubleProperty quotaProgressProperty = new SimpleDoubleProperty();
+
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-	private static final File JSON_FILE = new File(System.getProperty("user.dir") + "/config/yunData.json");
+	/**
+	 * 获取Javascript脚本引擎
+	 */
+	private static JavaScriptEngine engine = ScriptUtil.getJavaScriptEngine();
 
 	static {
 		try {
-			if (!JSON_FILE.exists()) {
-				JSON_FILE.getParentFile().mkdir();
-				JSON_FILE.createNewFile();
-			}
-			YUN_DATA = JSONUtil.readJSONObject(JSON_FILE, CharsetUtil.CHARSET_UTF_8);
+			// 加载解析脚本
+			engine.eval(new FileReader(RequestProxy.class.getResource("/js/util.js").getPath()));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
 	}
 
-	public static void setYunData(JSONObject yunData) {
-		FileWriter writer = null;
+	/**
+	 * 生成签名
+	 *
+	 * @return
+	 */
+	public static String sign() {
 		try {
-			writer = new FileWriter(JSON_FILE);
-
-			(RequestProxy.YUN_DATA = yunData).write(writer, 4, 0);
+			// 执行签名脚本
+			Object obj = engine.invokeFunction("sign", RequestProxy.YUN_DATA.getStr("sign3"), RequestProxy.YUN_DATA.getStr("sign1"));
+			// 进行Base64加密
+			return Base64.encode(obj.toString(), CharsetUtil.ISO_8859_1);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
-		} finally {
-			if (writer != null) {
-				try {
-					writer.flush();
-					writer.close();
-				} catch (IOException e) {
-				}
-			}
 		}
+		return null;
 	}
 
-	private static Optional<ButtonType> showErrorAlert(String message) {
-		Alert alert = new Alert(Alert.AlertType.ERROR);
-		alert.setTitle("系统提示");
-		alert.setHeaderText(message);
-		alert.initOwner(App.primaryStage);
-		return alert.showAndWait();
+	/**
+	 * 生成logid
+	 *
+	 * @return
+	 */
+	public static String logId() {
+		try {
+			// 执行脚本
+			Object obj = engine.invokeFunction("logId", CookieUtil.getCookie("BAIDUID"));
+			return obj.toString();
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+		return null;
 	}
 
 	private static HttpResponse httpGet(String url, JSONObject params) {
-		logger.info(params.toJSONString(4));
-		return HttpRequest.get(url).cookie(CookieUtil.COOKIE_STR).form(params).execute();
+		params = params == null ? new JSONObject() : params;
+		logger.info(url + "\r\n" + params.toStringPretty());
+
+		return HttpRequest.get(url).cookie(CollectionUtil.join(CookieUtil.COOKIES, "; ")).form(params).execute();
 	}
 
 	private static HttpResponse httpPost(String url, JSONObject params) {
-		logger.info(params.toJSONString(4));
-		return HttpRequest.post(url).cookie(CookieUtil.COOKIE_STR).form(params).execute();
+		params = params == null ? new JSONObject() : params;
+		logger.info(url + "\r\n" + params.toStringPretty());
+		return HttpRequest.post(url).cookie(CollectionUtil.join(CookieUtil.COOKIES, "; ")).form(params).execute();
 	}
 
 	private static List<BaiduFile> convertJSON2List(JSONArray array) {
@@ -90,9 +113,28 @@ public class RequestProxy {
 			return MAPPER.readValue(array.toString(), javaType);
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
-			showErrorAlert("操作失败，请稍后重试！");
+			MessageDialog.show("操作失败，请稍后重试！", e);
 		}
 		return Collections.emptyList();
+	}
+
+	/**
+	 * 直接HTTP GET访问网盘首页，获取到yunData信息
+	 *
+	 * @return
+	 */
+	public static JSONObject getYunData() {
+		HttpResponse rs = httpGet(Constant.HOME_URL, null);
+		Matcher matcher = Pattern.compile("var context=(.*);").matcher(rs.body());
+		if (matcher.find()) {
+			YUN_DATA = JSONUtil.parseObj(matcher.group(1));
+			Platform.runLater(() -> {
+				usernameProperty.set(YUN_DATA.getStr(Constant.NAME_KEY));
+				photoProperty.set(new Image(YUN_DATA.getStr(Constant.AVATAR_KEY)));
+			});
+		}
+		logger.info(YUN_DATA.toStringPretty());
+		return YUN_DATA;
 	}
 
 	/**
@@ -109,7 +151,7 @@ public class RequestProxy {
 			put("appid", 250528);
 			put("clienttype", 0);
 			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
-			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+			put("logid", logId());
 		}};
 
 		HttpResponse rs = httpGet(Constant.QUOTA_URL, params);
@@ -117,22 +159,21 @@ public class RequestProxy {
 		try {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
-			if (!Constant.SUCCEED.equals(result.get("errno"))) {
-				Optional<ButtonType> optional = showErrorAlert("网盘信息获取失败，请重新登录！");
-				if (ButtonType.OK.equals(optional.get())) {
-					Platform.runLater(() -> {
-						try {
-							App.primaryStage.hide();
-							App.generateLoginPanel();
-							App.primaryStage.show();
-						} catch (Exception e) {
-							logger.error(e.getMessage(), e);
-						}
-					});
-				}
-			}
+			logger.info(result.toStringPretty());
 
-			return JSONUtil.parseObj(rs.body());
+			if (Constant.SUCCEED.equals(result.get("errno"))) {
+				Platform.runLater(() -> {
+					double used = result.getDouble("used");
+					double total = result.getDouble("total");
+					quotaProgressProperty.set(used / total);
+					quotaTextProperty.set(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "GB/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "GB");
+				});
+
+				return result;
+			} else {
+				MessageDialog.show("网盘获取失败！");
+				throw new RuntimeException("网盘获取失败！");
+			}
 		} finally {
 			if (rs != null) rs.close();
 		}
@@ -156,7 +197,7 @@ public class RequestProxy {
 			put("channel", "chunlei");
 			put("appid", 250528);
 			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
-			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+			put("logid", logId());
 		}};
 
 		HttpResponse rs = httpGet(Constant.LIST_URL, params);
@@ -164,12 +205,12 @@ public class RequestProxy {
 		try {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
-			logger.info(result.toJSONString(4));
+			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.get("errno")) && result.containsKey("list")) {
 				return convertJSON2List(result.getJSONArray("list"));
 			} else {
-				showErrorAlert("文件列表获取失败！");
+				MessageDialog.show("文件列表获取失败！");
 				throw new RuntimeException("文件列表获取失败！");
 			}
 		} finally {
@@ -196,7 +237,7 @@ public class RequestProxy {
 			put("channel", "chunlei");
 			put("appid", 250528);
 			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
-			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+			put("logid", logId());
 		}};
 
 		HttpResponse rs = httpGet(Constant.SEARCH_URL, params);
@@ -204,12 +245,12 @@ public class RequestProxy {
 		try {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
-			logger.info(result.toJSONString(4));
+			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.get("errno")) && result.containsKey("list")) {
 				return convertJSON2List(result.getJSONArray("list"));
 			} else {
-				showErrorAlert("文件列表获取失败！");
+				MessageDialog.show("文件列表获取失败！");
 				throw new RuntimeException("文件列表获取失败！");
 			}
 		} finally {
@@ -235,7 +276,7 @@ public class RequestProxy {
 			put("appid", 250528);
 			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
 			put("clienttype", 0);
-			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+			put("logid", logId());
 		}};
 
 		JSONObject formData = new JSONObject() {{
@@ -247,12 +288,12 @@ public class RequestProxy {
 		try {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
-			logger.info(result.toJSONString(4));
+			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.getInt("errno"))) return true;
 			else {
-				showErrorAlert("操作失败，请稍后重试！");
-				return false;
+				MessageDialog.show("操作失败，请稍后重试！");
+				throw new RuntimeException("操作失败！");
 			}
 		} finally {
 			if (rs != null) rs.close();
@@ -276,7 +317,7 @@ public class RequestProxy {
 			put("appid", 250528);
 			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
 			put("clienttype", 0);
-			put("logid", "MTUwNTY2MDg0OTA1MTAuMzExNTk1MDY4OTUxODMyMw==");
+			put("logid", logId());
 		}};
 
 		JSONObject formData = new JSONObject() {{
@@ -293,15 +334,51 @@ public class RequestProxy {
 
 		try {
 			JSONObject result = JSONUtil.parseObj(rs.body());
+			result.put("pwd", formData.get("pwd"));
+			logger.info(result.toStringPretty());
 
-			logger.info(result.toJSONString(4));
-
-			if (Constant.SUCCEED.equals(result.getInt("errno"))) {
-				result.put("pwd", formData.get("pwd"));
-				return result;
-			} else {
-				showErrorAlert("文件分享失败，请稍后重试！");
+			if (Constant.SUCCEED.equals(result.getInt("errno"))) return result;
+			else {
+				MessageDialog.show("文件分享失败，请稍后重试！");
 				throw new RuntimeException("文件分享失败！");
+			}
+		} finally {
+			if (rs != null) rs.close();
+		}
+	}
+
+	/**
+	 * 获取网盘文件下载链接
+	 *
+	 * @param ids id集合
+	 * @return
+	 */
+	public static String getDownloadLink(JSONArray ids) {
+		JSONObject params = new JSONObject() {{
+			put("sign", sign());
+			put("timestamp", YUN_DATA.get("timestamp"));
+			put("fidlist", ids.toString());
+			put("type", "batch");
+			put("channel", "chunlei");
+			put("web", 1);
+			put("appid", 250528);
+			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
+			put("logid", logId());
+			put("clienttype", 0);
+			put("startLogTime", System.currentTimeMillis());
+		}};
+
+		HttpResponse rs = httpGet(Constant.DOWNLOAD_URL, params);
+
+		try {
+			JSONObject result = JSONUtil.parseObj(rs.body());
+
+			logger.info(result.toStringPretty());
+
+			if (Constant.SUCCEED.equals(result.getInt("errno"))) return result.getStr("dlink");
+			else {
+				MessageDialog.show("下载链接获取失败，请稍后重试！");
+				throw new RuntimeException("下载链接获取失败！");
 			}
 		} finally {
 			if (rs != null) rs.close();
