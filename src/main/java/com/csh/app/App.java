@@ -12,6 +12,8 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class App extends Application {
@@ -20,23 +22,35 @@ public class App extends Application {
 
 	public static Stage primaryStage;
 
-	public static Font FontAwesome;
+	public static final Font FontAwesome;
 
 	static {
 		FontAwesome = Font.loadFont(App.class.getResourceAsStream("/fonts/fontawesome.ttf"), 16);
+
+		// 程序启动时检测cookie文件是否存在，不存在则新建
+		File file = new File(System.getProperty("user.dir") + "/config/cookie.ini");
+
+		if (!file.exists()) {
+			try {
+				file.getParentFile().mkdir();
+				file.createNewFile();
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
 	}
 
 	@Override
 	public void start(Stage primaryStage) {
 		logger.info("程序启动中，请稍候……");
 		try {
-			this.primaryStage = primaryStage;
-			this.loadFXML("/fxml/Main.fxml");
-//			generateLoginPanel();
-			primaryStage.setTitle("百度网盘");
+			App.primaryStage = primaryStage;
+			MainController controller = (MainController) loadFXML("/fxml/Main.fxml");
 			primaryStage.centerOnScreen();
-			primaryStage.getIcons().add(new Image("/icon/BaiduNetdisk.png"));
+			primaryStage.setTitle("百度网盘");
+			primaryStage.getIcons().add(new Image("/image/BaiduNetdisk.png"));
 			primaryStage.show();
+			controller.loginCheck();
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
