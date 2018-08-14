@@ -1,4 +1,4 @@
-package com.csh.coustom;
+package com.csh.coustom.control;
 
 import com.csh.utils.FontAwesome;
 import javafx.scene.control.Hyperlink;
@@ -40,8 +40,18 @@ public class PathLink extends Hyperlink {
 		super(text);
 	}
 
+	public PathLink(FontAwesome icon) {
+		this.setIcon(icon);
+	}
+
 	public PathLink(String text, String path) {
 		super(text);
 		this.path = path;
+	}
+
+	public PathLink(String text, String path, FontAwesome icon) {
+		super(text);
+		this.path = path;
+		this.setIcon(icon);
 	}
 }
