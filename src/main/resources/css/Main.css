@@ -91,7 +91,11 @@
 	-fx-background-color: transparent;
 }
 
-.nav-btn > .label:hover {
+.nav-btn > .icon {
+	-fx-text-fill: #000;
+}
+
+.nav-btn > .icon:hover {
 	-fx-text-fill: #0096c9;
 }
 
@@ -99,11 +103,13 @@
 	-fx-font-size: 14px;
 }
 
-.action-btn {
-	-fx-cursor: hand;
+.action-box {
+	visibility: hidden;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
 }
 
-.action-btn:hover {
+.action-box .icon:hover {
 	-fx-text-fill: #0096c9;
 }
 
@@ -122,15 +128,15 @@
 
 .table-row-cell .icon {
 	-fx-font-size: 14px;
-	-fx-pref-width: 20px;
 }
 
-.table-row-cell:selected .action-btn:hover {
-	-fx-text-fill: #89ddf7 !important;
-}
-
-.table-row-cell:hover .action-btn, .table-row-cell:selected .action-btn {
+.table-row-cell:hover .action-box {
 	visibility: visible;
+}
+
+.table-row-cell:selected .name-link:hover,
+.table-row-cell:selected .action-box .icon:hover {
+	-fx-text-fill: #fff;
 }
 
 .table-row-cell:hover {
