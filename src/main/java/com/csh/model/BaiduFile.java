@@ -1,18 +1,16 @@
 package com.csh.model;
 
 import cn.hutool.core.date.DateUtil;
-import com.csh.utils.Constant;
+import cn.hutool.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.beans.property.*;
 
 import java.io.Serializable;
-import java.text.DecimalFormat;
 import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BaiduFile implements Serializable
-{
+public class BaiduFile implements Serializable {
 	@JsonProperty("fs_id")
 	private LongProperty id = new SimpleLongProperty();
 
@@ -33,129 +31,114 @@ public class BaiduFile implements Serializable
 
 	private BooleanProperty checked = new SimpleBooleanProperty();
 
-	public Long getId()
-	{
+	private JSONObject thumbs;
+
+	public Long getId() {
 		return id.get();
 	}
 
-	public void setId(Long id)
-	{
+	public void setId(Long id) {
 		this.id.set(id);
 	}
 
-	public String getFileName()
-	{
+	public String getFileName() {
 		return fileName.get();
 	}
 
-	public void setFileName(String fileName)
-	{
+	public void setFileName(String fileName) {
 		this.fileName.set(fileName);
 	}
 
-	public Boolean isDir()
-	{
+	public Boolean getIsDir() {
 		return isDir.get();
 	}
 
-	public void setIsDir(Boolean isDir)
-	{
+	public void setIsDir(Boolean isDir) {
 		this.isDir.set(isDir);
 	}
 
-	public Integer getCategory()
-	{
+	public Integer getCategory() {
 		return category.get();
 	}
 
-	public void setCategory(Integer category)
-	{
+	public void setCategory(Integer category) {
 		this.category.set(category);
 	}
 
-	public Long getSize()
-	{
+	public Long getSize() {
 		return size.get();
 	}
 
-	public void setSize(Long size)
-	{
+	public void setSize(Long size) {
 		this.size.set(size);
 	}
 
-	public String getPath()
-	{
+	public String getPath() {
 		return path.get();
 	}
 
-	public void setPath(String path)
-	{
+	public void setPath(String path) {
 		this.path.set(path);
 	}
 
-	public String getModifyTime()
-	{
+	public String getModifyTime() {
 		return modifyTime.get();
 	}
 
-	public void setModifyTime(Long modifyTime)
-	{
+	public void setModifyTime(Long modifyTime) {
 		this.modifyTime.set(DateUtil.formatDateTime(new Date(modifyTime * 1000L)));
 	}
 
-	public Boolean getChecked()
-	{
+	public Boolean getChecked() {
 		return checked.get();
 	}
 
-	public void setChecked(Boolean checked)
-	{
+	public void setChecked(Boolean checked) {
 		this.checked.set(checked);
 	}
 
-	public LongProperty idProperty()
-	{
+	public LongProperty idProperty() {
 		return id;
 	}
 
-	public StringProperty fileNameProperty()
-	{
+	public StringProperty fileNameProperty() {
 		return fileName;
 	}
 
-	public BooleanProperty isDirProperty()
-	{
+	public BooleanProperty isDirProperty() {
 		return isDir;
 	}
 
-	public IntegerProperty categoryProperty()
-	{
+	public IntegerProperty categoryProperty() {
 		return category;
 	}
 
-	public LongProperty sizeProperty()
-	{
+	public LongProperty sizeProperty() {
 		return size;
 	}
 
-	public StringProperty pathProperty()
-	{
+	public StringProperty pathProperty() {
 		return path;
 	}
 
-	public StringProperty modifyTimeProperty()
-	{
+	public StringProperty modifyTimeProperty() {
 		return modifyTime;
 	}
 
-	public BooleanProperty checkedProperty()
-	{
+	public BooleanProperty checkedProperty() {
 		return checked;
 	}
 
+	public JSONObject getThumbs() {
+		return thumbs;
+	}
+
+	public void setThumbs(JSONObject thumbs) {
+		this.thumbs = thumbs;
+	}
+
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return "BaiduFile{" +
 				"id=" + id +
 				", fileName=" + fileName +
@@ -165,6 +148,7 @@ public class BaiduFile implements Serializable
 				", path=" + path +
 				", modifyTime=" + modifyTime +
 				", checked=" + checked +
+				", thumbs=" + thumbs +
 				'}';
 	}
 }
