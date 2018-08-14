@@ -1,4 +1,4 @@
-package com.csh.coustom;
+package com.csh.coustom.dialog;
 
 import com.csh.app.App;
 import javafx.beans.property.BooleanProperty;
@@ -6,10 +6,10 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
+import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
 /**
@@ -17,7 +17,7 @@ import javafx.scene.paint.Color;
  */
 public class ShareDialog extends Dialog<ButtonType> {
 
-	private AnchorPane sharePane = new AnchorPane();
+	private GridPane sharePane = new GridPane();
 
 	/**
 	 * 过期时间属性
@@ -39,7 +39,8 @@ public class ShareDialog extends Dialog<ButtonType> {
 
 	public ShareDialog() {
 		sharePane.setPrefWidth(400);
-		sharePane.setPrefHeight(200);
+		sharePane.setPrefHeight(160);
+		sharePane.getColumnConstraints().clear();
 		createSharePane();
 		this.setTitle("分享文件");
 		this.initOwner(App.primaryStage);
@@ -51,6 +52,9 @@ public class ShareDialog extends Dialog<ButtonType> {
 	 * 分享完成显示信息面板
 	 */
 	public void createShareInfoPane(String shareUrl, String password) {
+		sharePane.getColumnConstraints().clear();
+		sharePane.getColumnConstraints().addAll(new ColumnConstraints());
+
 		ObservableList<Node> children = sharePane.getChildren();
 		children.clear();
 
@@ -62,21 +66,14 @@ public class ShareDialog extends Dialog<ButtonType> {
 		}
 
 		Label label_1 = new Label(shareMsg + periodMsg);
-		label_1.setLayoutX(20);
-		label_1.setLayoutY(35);
 		label_1.setTextFill(Color.web("#3b8cff"));
 
 		TextField link = new TextField(shareUrl);
 		link.setPrefHeight(30);
-		link.setPrefWidth(360);
-		link.setLayoutX(20);
-		link.setLayoutY(70);
+		link.setPrefWidth(380);
 		link.setEditable(false);
 
-
 		Label label_2 = new Label("提取密码：");
-		label_2.setLayoutX(20);
-		label_2.setLayoutY(120);
 		label_2.visibleProperty().bindBidirectional(privateProperty);
 
 		TextField pwd = new TextField(password);
@@ -86,6 +83,9 @@ public class ShareDialog extends Dialog<ButtonType> {
 
 		label_2.setGraphic(pwd);
 		label_2.setContentDisplay(ContentDisplay.RIGHT);
+
+		GridPane.setRowIndex(link, 1);
+		GridPane.setRowIndex(label_2, 2);
 
 		children.addAll(label_1, link, label_2);
 
@@ -100,47 +100,59 @@ public class ShareDialog extends Dialog<ButtonType> {
 	 * @return
 	 */
 	private void createSharePane() {
+		sharePane.getColumnConstraints().addAll(new ColumnConstraints() {{
+			setPrefWidth(70);
+			setHalignment(HPos.RIGHT);
+		}}, new ColumnConstraints());
+
+		sharePane.getRowConstraints().addAll(new RowConstraints() {{
+			setPrefHeight(45);
+		}}, new RowConstraints(), new RowConstraints() {{
+			setVgrow(Priority.ALWAYS);
+		}});
+
 		ObservableList<Node> children = sharePane.getChildren();
 		Label label_1 = new Label("分享形式：");
-		label_1.setLayoutX(30);
-		label_1.setLayoutY(30);
 
 		ToggleGroup tg = new ToggleGroup();
 
 		RadioButton privateBtn = new RadioButton("加密");
-		privateBtn.setLayoutX(95);
-		privateBtn.setLayoutY(30);
 		privateBtn.setToggleGroup(tg);
 		privateBtn.setContentDisplay(ContentDisplay.RIGHT);
 		privateBtn.selectedProperty().bindBidirectional(privateProperty);
+
 		Label label_2 = new Label("仅限拥有密码者可查看，更加隐私安全");
 		label_2.setTextFill(Color.GRAY);
+
 		privateBtn.setGraphic(label_2);
 
 		RadioButton publicBtn = new RadioButton("公开");
-		publicBtn.setLayoutX(95);
-		publicBtn.setLayoutY(60);
 		publicBtn.setToggleGroup(tg);
 		publicBtn.setContentDisplay(ContentDisplay.RIGHT);
+
 		Label label_3 = new Label("任何人可查看或下载，同时出现在您的个人主页");
 		label_3.setTextFill(Color.GRAY);
+
 		publicBtn.setGraphic(label_3);
 
 		Label label_4 = new Label("有效期：");
-		label_4.setLayoutX(42);
-		label_4.setLayoutY(100);
+		GridPane.setRowIndex(label_4, 2);
 
-		ChoiceBox box = new ChoiceBox();
+		ComboBox<Period> box = new ComboBox<>();
 		box.valueProperty().bindBidirectional(periodProperty);
 		box.getItems().addAll(new Period("永久有效", 0), new Period("7天", 7), new Period("1天", 1));
 		box.getSelectionModel().selectFirst();
 
-		label_4.setGraphic(box);
-		label_4.setContentDisplay(ContentDisplay.RIGHT);
+		GridPane.setColumnIndex(privateBtn, 1);
 
-		children.addAll(label_1, privateBtn, publicBtn, label_4);
+		GridPane.setRowIndex(publicBtn, 1);
+		GridPane.setColumnIndex(publicBtn, 1);
 
-		this.getDialogPane().getButtonTypes().clear();
+		GridPane.setRowIndex(box, 2);
+		GridPane.setColumnIndex(box, 1);
+
+		children.addAll(label_1, privateBtn, publicBtn, label_4, box);
+
 		this.getDialogPane().getButtonTypes().addAll(new ButtonType("创建链接", ButtonBar.ButtonData.OK_DONE), ButtonType.CANCEL);
 	}
 
