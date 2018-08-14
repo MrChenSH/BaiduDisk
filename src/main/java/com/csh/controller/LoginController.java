@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+@Deprecated
 public class LoginController implements Initializable {
 
 	private static final Logger logger = Logger.getLogger(LoginController.class);
@@ -53,8 +54,7 @@ public class LoginController implements Initializable {
 						if (CollectionUtil.isNotEmpty(yunData)) {
 							List<String> cookies = CookieHandler.getDefault().get(uri, headers).get("Cookie");
 
-							RequestProxy.setYunData(yunData);
-							CookieUtil.setCookies(cookies.get(0).split("; "));
+							CookieUtil.setCookies(cookies.get(0));
 							Platform.runLater(() -> {
 								try {
 									App.primaryStage.hide();
