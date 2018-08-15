@@ -42,7 +42,7 @@
 					<children>
 						<ImageView fx:id="userImage" fitHeight="70.0" fitWidth="70.0" pickOnBounds="true" preserveRatio="true" GridPane.rowSpan="3">
 							<image>
-								<Image url="@/image/BaiduNetdisk.png" />
+								<Image url="@/image/logo.png" />
 							</image>
 						</ImageView>
 						<Label fx:id="userLabel" text="用户名" GridPane.columnIndex="1">

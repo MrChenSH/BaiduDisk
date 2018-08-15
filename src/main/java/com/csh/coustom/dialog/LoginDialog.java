@@ -32,7 +32,7 @@ public class LoginDialog extends Stage {
 		this.initOwner(App.primaryStage);
 		this.initModality(Modality.WINDOW_MODAL);
 		this.setScene(new Scene(webView, 400, 400));
-		this.getIcons().add(new Image("/image/BaiduNetdisk.png"));
+		this.getIcons().add(new Image("/image/logo.png"));
 		try {
 			URI uri = URI.create(Constant.HOME_URL);
 

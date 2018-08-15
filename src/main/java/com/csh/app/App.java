@@ -48,7 +48,7 @@ public class App extends Application {
 			MainController controller = (MainController) loadFXML("/fxml/Main.fxml");
 			primaryStage.centerOnScreen();
 			primaryStage.setTitle("百度网盘");
-			primaryStage.getIcons().add(new Image("/image/BaiduNetdisk.png"));
+			primaryStage.getIcons().add(new Image("/image/logo.png"));
 			primaryStage.show();
 			controller.loginCheck();
 		} catch (Exception e) {
