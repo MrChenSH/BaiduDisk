@@ -1,5 +1,6 @@
 package com.csh.app;
 
+import cn.hutool.cron.CronUtil;
 import com.csh.controller.LoginController;
 import com.csh.controller.MainController;
 import javafx.application.Application;
@@ -55,6 +56,16 @@ public class App extends Application {
 			logger.error(e.getMessage(), e);
 		}
 
+	}
+
+	/**
+	 * 程序停止同时终止定时任务
+	 * @throws Exception
+	 */
+	@Override
+	public void stop() throws Exception {
+		CronUtil.stop();
+		super.stop();
 	}
 
 	/**
