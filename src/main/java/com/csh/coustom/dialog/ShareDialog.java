@@ -121,7 +121,7 @@ public class ShareDialog extends Dialog<ButtonType> {
 		privateBtn.setContentDisplay(ContentDisplay.RIGHT);
 		privateBtn.selectedProperty().bindBidirectional(privateProperty);
 
-		Label label_2 = new Label("仅限拥有密码者可查看，更加隐私安全");
+		Label label_2 = new Label("输入密码才能查看、下载，更加私密安全");
 		label_2.setTextFill(Color.GRAY);
 
 		privateBtn.setGraphic(label_2);

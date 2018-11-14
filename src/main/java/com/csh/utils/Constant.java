@@ -64,11 +64,6 @@ public final class Constant {
 	public static final Integer SUCCEED = 0;
 
 	/**
-	 * 错误信息集合
-	 */
-	public static final Map<Integer, String> ERRORS = new HashMap<>();
-
-	/**
 	 * 网盘文件操作
 	 */
 	public final class Operate {
@@ -84,46 +79,47 @@ public final class Constant {
 	}
 
 	/**
-	 * 文件类型
+	 * 文件类型正则
 	 */
-	public final class FileType {
+	public final class FileTypeRegx {
 
 		/**
 		 * 文本文件
 		 */
-		public static final String TEXT = "txt|log|ini|properties";
+		public static final String TEXT = "(.txt|.log|.ini|.properties)$";
 
 		/**
 		 * 图片
 		 */
-		public static final String IMAGE = "jpg|png|jpeg|gif|bmp";
+		public static final String IMAGE = "(.jpg|.png|.jpeg|.gif|.bmp)$";
 
 		/**
 		 * 音频
 		 */
-		public static final String AUDIO = "mp3|wav|m4a|ape|flac|ogg";
+		public static final String AUDIO = "(.mp3|.wav|.m4a|.ape|.flac|.ogg)$";
 
 		/**
 		 * 视频
 		 */
-		public static final String VIDEO = "avi|wmv|mpeg|mp4|mov|mkv|flv|f4v|m4v|rmvb|rm|3gp|dat|ts|mts|vob";
+		public static final String VIDEO = "(.avi|.wmv|.mpeg|.mp4|.mov|.mkv|.flv|.f4v|.m4v|.rmvb|.rm|.3gp|.dat|.ts|.mts|.vob)$";
 
 		/**
 		 * 压缩文件
 		 */
-		public static final String ARCHIVE = "zip|rar|7z|cab|tgz|tar.gz|tar.xz|lz|deb";
+		public static final String ARCHIVE = "(.zip|.rar|.7z|.cab|.tgz|.tar.gz|.tar.xz|.lz|.deb)$";
 	}
 
-	static {
-		ERRORS.put(2, "您输入的帐号不存在！");
-		ERRORS.put(4, "您输入的帐号或密码有误！");
-		ERRORS.put(6, "账号异常！");
-		ERRORS.put(7, "您输入的密码不正确！");
-		ERRORS.put(257, "请输入验证码！");
-		ERRORS.put(120021, "您的帐号可能存在安全隐患，为保障您的帐号安全，请验证后登录。");
-	}
-
-	public static void main(String[] args) {
-		System.out.println("zip".matches("zip|rar|7z|cab|tgz|tar.gz|tar.xz|lz|deb"));
-	}
+	public static final Map<String, FontAwesome> ICON_MAP = new HashMap<String, FontAwesome>() {{
+		put("(.apk)$", FontAwesome.ANDROID);
+		put("(.pdf)$", FontAwesome.FILE_PDF);
+		put("(.font|.ttf)$", FontAwesome.FILE_FONT);
+		put("(.ppt|.pptx)$", FontAwesome.FILE_PPT);
+		put("(.doc|.docx)$", FontAwesome.FILE_WORD);
+		put("(.xls|.xlsx)$", FontAwesome.FILE_EXCEL);
+		put(FileTypeRegx.TEXT, FontAwesome.FILE_TEXT);
+		put(FileTypeRegx.IMAGE, FontAwesome.FILE_IMAGE);
+		put(FileTypeRegx.AUDIO, FontAwesome.FILE_AUDIO);
+		put(FileTypeRegx.VIDEO, FontAwesome.FILE_VIDEO);
+		put(FileTypeRegx.ARCHIVE, FontAwesome.FILE_ARCHIVE);
+	}};
 }

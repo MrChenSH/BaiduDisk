@@ -51,7 +51,7 @@ public class App extends Application {
 			primaryStage.setTitle("百度网盘");
 			primaryStage.getIcons().add(new Image("/image/logo.png"));
 			primaryStage.show();
-			controller.loginCheck();
+			new Thread(controller.new LoginCheckTask()).start();
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -60,6 +60,7 @@ public class App extends Application {
 
 	/**
 	 * 程序停止同时终止定时任务
+	 *
 	 * @throws Exception
 	 */
 	@Override

@@ -4,7 +4,7 @@ public enum FontAwesome {
 
     HOME("\uf015"),
     FILE("\uf15b"),
-    FONT("\uf031"),
+    FILE_FONT("\uf031"),
 	FILE_PDF("\uf1c1"),
 	FILE_WORD("\uf1c2"),
 	FILE_EXCEL("\uf1c3"),
@@ -20,6 +20,7 @@ public enum FontAwesome {
     ANDROID("\uf17b"),
     UPLOAD("\uf093"),
     DOWNLOAD("\uf019"),
+	CLOUD_DOWNLOAD("\uf0ed"),
     TRASH_O("\uf014"),
     FILE_TEXT("\uf15c"),
     FOLDER_OPEN("\uf07c"),
@@ -29,7 +30,12 @@ public enum FontAwesome {
     ARROW_RIGHT("\uf061"),
     CHEVRON_LEFT("\uf053"),
     CHEVRON_RIGHT("\uf054"),
-    SHARE_ALT("\uf1e0");
+    SHARE_ALT("\uf1e0"),
+    CLOUD("\uf0c2"),
+	START("\uf04b"),
+	PAUSE("\uf04c"),
+	STOP("\uf04d"),
+	REMOVE("\uf00d");
 
 
     public final String value;

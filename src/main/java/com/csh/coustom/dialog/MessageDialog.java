@@ -5,6 +5,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class MessageDialog {
 		}
 
 		final DialogPane dialogPane = dialog.getDialogPane();
+		dialogPane.setBackground(Background.EMPTY);
 		dialogPane.setExpandableContent(new BorderPane(textArea));
 		return dialog.showAndWait();
 	}
@@ -52,6 +54,7 @@ public class MessageDialog {
 		dialog.setTitle("系统提示");
 		dialog.setHeaderText(message);
 		dialog.initOwner(App.primaryStage);
+		dialog.getDialogPane().setBackground(Background.EMPTY);
 		return dialog.showAndWait();
 	}
 }

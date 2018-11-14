@@ -37,13 +37,13 @@ public class RequestProxy {
 
 	public static JSONObject YUN_DATA = new JSONObject();
 
-	public static StringProperty usernameProperty = new SimpleStringProperty();
+	public static StringProperty usernameProperty = new SimpleStringProperty("百度网盘");
 
-	public static ObjectProperty<Image> photoProperty = new SimpleObjectProperty<>();
+	public static ObjectProperty<Image> photoProperty = new SimpleObjectProperty<>(new Image("image/logo.png"));
 
-	public static StringProperty quotaTextProperty = new SimpleStringProperty();
+	public static StringProperty quotaTextProperty = new SimpleStringProperty("0GB/0GB");
 
-	public static DoubleProperty quotaProgressProperty = new SimpleDoubleProperty();
+	public static DoubleProperty quotaProgressProperty = new SimpleDoubleProperty(1.0);
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -124,17 +124,21 @@ public class RequestProxy {
 	 * @return
 	 */
 	public static JSONObject getYunData() {
-		HttpResponse rs = httpGet(Constant.HOME_URL, null);
-		Matcher matcher = Pattern.compile("var context=(.*);").matcher(rs.body());
-		if (matcher.find()) {
-			YUN_DATA = JSONUtil.parseObj(matcher.group(1));
-			Platform.runLater(() -> {
-				usernameProperty.set(YUN_DATA.getStr(Constant.NAME_KEY));
-				photoProperty.set(new Image(YUN_DATA.getStr(Constant.AVATAR_KEY)));
-			});
+		try (HttpResponse rs = httpGet(Constant.HOME_URL, null)) {
+			Matcher matcher = Pattern.compile("var context=(.*);").matcher(rs.body());
+			if (matcher.find()) {
+				YUN_DATA = JSONUtil.parseObj(matcher.group(1));
+				Platform.runLater(() -> {
+					usernameProperty.set(YUN_DATA.getStr(Constant.NAME_KEY));
+					photoProperty.set(new Image(YUN_DATA.getStr(Constant.AVATAR_KEY)));
+				});
+			}
+		} catch (Exception e) {
+			MessageDialog.show("网盘信息获取失败，请稍后重试！", e);
+		} finally {
+			logger.info(YUN_DATA.toStringPretty());
+			return YUN_DATA;
 		}
-		logger.info(YUN_DATA.toStringPretty());
-		return YUN_DATA;
 	}
 
 	/**
@@ -154,9 +158,7 @@ public class RequestProxy {
 			put("logid", logId());
 		}};
 
-		HttpResponse rs = httpGet(Constant.QUOTA_URL, params);
-
-		try {
+		try (HttpResponse rs = httpGet(Constant.QUOTA_URL, params)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
 			logger.info(result.toStringPretty());
@@ -170,12 +172,10 @@ public class RequestProxy {
 				});
 
 				return result;
-			} else {
-				MessageDialog.show("网盘获取失败！");
-				throw new RuntimeException("网盘获取失败！");
-			}
-		} finally {
-			if (rs != null) rs.close();
+			} else throw new RuntimeException("网盘信息获取失败！");
+		} catch (Exception e) {
+			MessageDialog.show("网盘信息获取失败，请稍后重试！", e);
+			throw e;
 		}
 	}
 
@@ -200,21 +200,17 @@ public class RequestProxy {
 			put("logid", logId());
 		}};
 
-		HttpResponse rs = httpGet(Constant.LIST_URL, params);
-
-		try {
+		try (HttpResponse rs = httpGet(Constant.LIST_URL, params)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
 			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.get("errno")) && result.containsKey("list")) {
 				return convertJSON2List(result.getJSONArray("list"));
-			} else {
-				MessageDialog.show("文件列表获取失败！");
-				throw new RuntimeException("文件列表获取失败！");
-			}
-		} finally {
-			if (rs != null) rs.close();
+			} else throw new RuntimeException("文件列表获取失败！");
+		} catch (Exception e) {
+			MessageDialog.show("文件列表获取失败，请稍后重试！", e);
+			throw e;
 		}
 	}
 
@@ -240,21 +236,17 @@ public class RequestProxy {
 			put("logid", logId());
 		}};
 
-		HttpResponse rs = httpGet(Constant.SEARCH_URL, params);
-
-		try {
+		try (HttpResponse rs = httpGet(Constant.SEARCH_URL, params)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
 			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.get("errno")) && result.containsKey("list")) {
 				return convertJSON2List(result.getJSONArray("list"));
-			} else {
-				MessageDialog.show("文件列表获取失败！");
-				throw new RuntimeException("文件列表获取失败！");
-			}
-		} finally {
-			if (rs != null) rs.close();
+			} else throw new RuntimeException("文件列表获取失败！");
+		} catch (Exception e) {
+			MessageDialog.show("文件列表获取失败，请稍后重试！", e);
+			throw e;
 		}
 	}
 
@@ -283,20 +275,16 @@ public class RequestProxy {
 			put("filelist", fileList.toString());
 		}};
 
-		HttpResponse rs = httpPost(Constant.MANAGER_URL + HttpUtil.toParams(params), formData);
-
-		try {
+		try (HttpResponse rs = httpPost(Constant.MANAGER_URL + HttpUtil.toParams(params), formData)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
 			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.getInt("errno"))) return true;
-			else {
-				MessageDialog.show("操作失败，请稍后重试！");
-				throw new RuntimeException("操作失败！");
-			}
-		} finally {
-			if (rs != null) rs.close();
+			else throw new RuntimeException("操作失败！");
+		} catch (Exception e) {
+			MessageDialog.show("操作失败，请稍后重试！", e);
+			throw e;
 		}
 	}
 
@@ -305,7 +293,7 @@ public class RequestProxy {
 	 *
 	 * @param ids       id集合
 	 * @param isPrivate 是否为私密分享
-	 * @param period    是否为私密分享
+	 * @param period    有效期
 	 * @return
 	 */
 	public static JSONObject share(JSONArray ids, boolean isPrivate, int period) {
@@ -325,40 +313,35 @@ public class RequestProxy {
 			put("channel_list", "[]");
 			put("fid_list", ids.toString());
 			put("schannel", isPrivate ? 4 : 0);
-			if (isPrivate) {
-				put("pwd", RandomUtil.simpleUUID().substring(0, 4));
-			}
+			if (isPrivate) put("pwd", RandomUtil.randomString(4));
 		}};
 
-		HttpResponse rs = httpPost(Constant.SHARE_URL + HttpUtil.toParams(params), formData);
-
-		try {
+		try (HttpResponse rs = httpPost(Constant.SHARE_URL + HttpUtil.toParams(params), formData)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 			result.put("pwd", formData.get("pwd"));
 			logger.info(result.toStringPretty());
 
 			if (Constant.SUCCEED.equals(result.getInt("errno"))) return result;
-			else {
-				MessageDialog.show("文件分享失败，请稍后重试！");
-				throw new RuntimeException("文件分享失败！");
-			}
-		} finally {
-			if (rs != null) rs.close();
+			else throw new RuntimeException("文件分享失败！");
+		} catch (Exception e) {
+			MessageDialog.show("文件分享失败，请稍后重试！", e);
+			throw e;
 		}
 	}
 
 	/**
 	 * 获取网盘文件下载链接
 	 *
-	 * @param ids id集合
+	 * @param id 文件id
 	 * @return
 	 */
-	public static String getDownloadLink(JSONArray ids) {
+	public static String download(long id) {
 		JSONObject params = new JSONObject() {{
 			put("sign", sign());
 			put("timestamp", YUN_DATA.get("timestamp"));
-			put("fidlist", ids.toString());
-			put("type", "batch");
+			put("fidlist", "[" + id + "]");
+			// dlink单个文件下载，batch批量下载
+			put("type", "dlink");
 			put("channel", "chunlei");
 			put("web", 1);
 			put("appid", 250528);
@@ -368,20 +351,16 @@ public class RequestProxy {
 			put("startLogTime", System.currentTimeMillis());
 		}};
 
-		HttpResponse rs = httpGet(Constant.DOWNLOAD_URL, params);
-
-		try {
+		try (HttpResponse rs = httpGet(Constant.DOWNLOAD_URL, params)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
 			logger.info(result.toStringPretty());
-
-			if (Constant.SUCCEED.equals(result.getInt("errno"))) return result.getStr("dlink");
-			else {
-				MessageDialog.show("下载链接获取失败，请稍后重试！");
-				throw new RuntimeException("下载链接获取失败！");
-			}
-		} finally {
-			if (rs != null) rs.close();
+			if (Constant.SUCCEED.equals(result.getInt("errno")))
+				return result.getJSONArray("dlink").getJSONObject(0).getStr("dlink");
+			else throw new RuntimeException("下载链接获取失败！");
+		} catch (Exception e) {
+			MessageDialog.show("下载链接获取失败，请稍后重试！", e);
+			throw e;
 		}
 	}
 }
