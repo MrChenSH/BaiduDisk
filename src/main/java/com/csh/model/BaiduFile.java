@@ -1,19 +1,15 @@
 package com.csh.model;
 
-import cn.hutool.core.clone.CloneRuntimeException;
 import cn.hutool.core.clone.CloneSupport;
-import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONObject;
 import com.csh.utils.Constant;
-import com.csh.utils.FontAwesome;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.beans.property.*;
-import javafx.scene.control.Label;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,6 +50,7 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 	}
 
 	public void setFileName(String fileName) {
+		if (this.getPath().equals("/apps")) fileName = "我的应用数据";
 		this.fileName.set(fileName);
 	}
 
@@ -94,7 +91,7 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 	}
 
 	public void setModifyTime(Long modifyTime) {
-		this.modifyTime.set(DateUtil.formatDateTime(new Date(modifyTime * 1000L)));
+		this.modifyTime.set(new DateTime(modifyTime * 1000).toString());
 	}
 
 	public Boolean getChecked() {
@@ -137,15 +134,16 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 		return checked;
 	}
 
-	public FontAwesome getIcon() {
-		if (this.getIsDir()) return FontAwesome.FOLDER;
-		Set<Map.Entry<String, FontAwesome>> entries = Constant.ICON_MAP.entrySet();
-		for (Map.Entry<String, FontAwesome> entry : entries) {
+	public String getIcon() {
+		if (this.getPath().equals("/apps")) return "image/FileType/Middle/Apps.png";
+		if (this.getIsDir()) return "image/FileType/Middle/FolderType.png";
+		Set<Map.Entry<String, String>> entries = Constant.ICON_MAP.entrySet();
+		for (Map.Entry<String, String> entry : entries) {
 			if (ReUtil.contains(entry.getKey(), this.getFileName().toLowerCase())) {
 				return entry.getValue();
 			}
 		}
-		return FontAwesome.FILE;
+		return "image/FileType/Middle/OtherType.png";
 	}
 
 	public JSONObject getThumbs() {

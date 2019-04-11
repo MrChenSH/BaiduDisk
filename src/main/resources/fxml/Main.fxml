@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.csh.coustom.control.IconButton?>
+<?import com.csh.coustom.control.Icon?>
 <?import com.csh.coustom.control.PathLink?>
 <?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Separator?>
@@ -20,6 +22,7 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
@@ -36,15 +39,11 @@
 					<content>
 						<BorderPane fx:id="homePane">
 							<center>
-								<TableView id="file_table" fx:id="fileTable" onContextMenuRequested="#onTableContextMenu" BorderPane.alignment="CENTER">
+								<TableView fx:id="fileTable" onContextMenuRequested="#onTableContextMenu" styleClass="file-table" BorderPane.alignment="CENTER">
 									<columns>
-										<TableColumn fx:id="checkBoxColumn" editable="false" prefWidth="30.0" resizable="false" sortable="false" text="全选">
+										<TableColumn fx:id="checkBoxColumn" editable="false" prefWidth="35" resizable="false" sortable="false">
 											<graphic>
-												<CheckBox fx:id="checkAllBox" contentDisplay="CENTER" focusTraversable="false" mnemonicParsing="false" onAction="#onClickToCheckAll">
-													<padding>
-														<Insets right="-5.0" />
-													</padding>
-												</CheckBox>
+												<CheckBox fx:id="checkAllBox" focusTraversable="false" onAction="#onClickToCheckAll" />
 											</graphic>
 										</TableColumn>
 										<TableColumn fx:id="fileNameColumn" minWidth="300.0" prefWidth="500" text="文件名" />
@@ -52,13 +51,17 @@
 										<TableColumn fx:id="fileSizeColumn" minWidth="80.0" prefWidth="80" text="大小" />
 									</columns>
 									<contextMenu>
-										<ContextMenu id="table_content_menu" fx:id="contextMenu" onHidden="#onTableMenuHidden">
+										<ContextMenu id="table_content_menu" fx:id="contextMenu">
 											<items>
 												<MenuItem mnemonicParsing="false" onAction="#onClickToDownload" text="下载" />
 												<MenuItem mnemonicParsing="false" onAction="#onClickToOpenFile" text="打开" />
 												<SeparatorMenuItem />
 												<MenuItem mnemonicParsing="false" onAction="#onClickToRename" text="重命名" />
-												<MenuItem mnemonicParsing="false" onAction="#onClickToDelete" text="删除" />
+												<MenuItem mnemonicParsing="false" onAction="#onClickToDelete" text="删除">
+													<graphic>
+														<Icon icon="EL_DELETE" styleClass="el-icon" />
+													</graphic>
+												</MenuItem>
 												<MenuItem mnemonicParsing="false" text="属性" />
 											</items>
 										</ContextMenu>
@@ -66,50 +69,54 @@
 								</TableView>
 							</center>
 							<top>
-								<BorderPane fx:id="homePaneBar" BorderPane.alignment="CENTER">
+								<BorderPane fx:id="homePaneBar" styleClass="file-table-tbar" BorderPane.alignment="CENTER">
 									<left>
 										<HBox alignment="CENTER" prefHeight="35.0" BorderPane.alignment="CENTER">
 											<children>
-												<PathLink id="back_btn" fx:id="backBtn" disable="true" icon="ARROW_LEFT" onAction="#onClickToBack" styleClass="nav-btn" visited="true">
-													<font>
-														<Font size="16.0" />
-													</font>
+												<PathLink id="back_btn" fx:id="backBtn" disable="true" onAction="#onClickToBack" styleClass="nav-btn" visited="true">
+													<graphic>
+														<Icon icon="EL_ARROW_LEFT" styleClass="el-icon" />
+													</graphic>
 												</PathLink>
-												<PathLink id="forward_btn" fx:id="forwardBtn" disable="true" icon="ARROW_RIGHT" styleClass="nav-btn" visited="true">
-													<font>
-														<Font size="16.0" />
-													</font>
+												<PathLink id="forward_btn" fx:id="forwardBtn" disable="true" styleClass="nav-btn" visited="true">
+													<graphic>
+														<Icon icon="EL_ARROW_RIGHT" styleClass="el-icon" />
+													</graphic>
 												</PathLink>
-												<PathLink id="home_btn" fx:id="homeBtn" icon="HOME" onAction="#onClickToOpenFile" path="/" styleClass="nav-btn" visited="true">
-													<font>
-														<Font size="16.0" />
-													</font>
+												<MenuButton mnemonicParsing="false">
+													<items>
+														<CheckMenuItem selected="true" text="我的网盘" />
+														<SeparatorMenuItem />
+														<MenuItem mnemonicParsing="false" text="Action 1" />
+														<MenuItem mnemonicParsing="false" text="Action 2" />
+													</items>
+												</MenuButton>
+												<PathLink id="refresh_btn" fx:id="refreshBtn" onAction="#onClickToRefresh" path="/" styleClass="nav-btn" visited="true">
+													<graphic>
+														<Icon icon="EL_REFRESH" styleClass="el-icon" />
+													</graphic>
 												</PathLink>
-												<Separator orientation="VERTICAL" />
+												<Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="15.0" prefWidth="15.0" />
 											</children>
-											<BorderPane.margin>
-												<Insets />
-											</BorderPane.margin>
 										</HBox>
 									</left>
 									<right>
 										<HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
 											<children>
-												<PathLink id="refresh_btn" fx:id="refreshBtn" icon="REFRESH" onAction="#onClickToRefresh" path="/" styleClass="nav-btn" visited="true">
-													<font>
-														<Font size="16.0" />
-													</font>
-												</PathLink>
-												<Separator orientation="VERTICAL" />
+												<Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="15.0" prefWidth="15.0" />
 												<TextField id="search_field" fx:id="searchField" onAction="#onClickToSearchFile" promptText="搜索网盘文件" />
-												<IconButton id="search_btn" fx:id="searchBtn" icon="SEARCH" onAction="#onClickToSearchFile" styleClass="nav-btn" textFill="black" />
+												<Button id="search_btn" fx:id="searchBtn" onAction="#onClickToSearchFile" styleClass="nav-btn">
+													<graphic>
+														<Icon icon="EL_SERACH" styleClass="el-icon" />
+													</graphic>
+												</Button>
 											</children>
 										</HBox>
 									</right>
 									<center>
 										<HBox fx:id="breadcrumb" alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
 											<children>
-												<PathLink id="home_link" fx:id="homeLink" minWidth="65.0" onAction="#onClickToOpenFile" path="/" styleClass="path-link" text="我的网盘" visited="true">
+												<PathLink id="home_link" fx:id="homeLink" minWidth="-Infinity" onAction="#onClickToOpenFile" path="/" styleClass="path-link" text="我的网盘" visited="true">
 												</PathLink>
 											</children>
 										</HBox>
@@ -117,16 +124,41 @@
 									<top>
 										<ToolBar styleClass="action-tbar" BorderPane.alignment="CENTER">
 											<items>
-												<IconButton fx:id="uploadBtn" icon="UPLOAD" onAction="#onClickToUpload" styleClass="button-primary" text="上传" />
-												<IconButton fx:id="downloadBtn" icon="DOWNLOAD" onAction="#onClickToDownload" styleClass="button-primary" text="下载" />
-												<IconButton fx:id="shareBtn" icon="SHARE_ALT" onAction="#onClickToShare" styleClass="button-primary" text="分享" />
-												<IconButton fx:id="deleteBtn" icon="TRASH" onAction="#onClickToDelete" styleClass="button-primary" text="删除" />
-												<Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#onClickToLogout" styleClass="button-primary" text="退出登录" />
+												<Button fx:id="uploadBtn" onAction="#onClickToUpload" text="上传">
+													<graphic>
+														<Icon icon="EL_UPLOAD" styleClass="el-icon" />
+													</graphic>
+												</Button>
+												<Button fx:id="downloadBtn" onAction="#onClickToDownload" text="下载">
+													<graphic>
+														<Icon icon="EL_DOWNLOAD" styleClass="el-icon" />
+													</graphic>
+												</Button>
+												<Button fx:id="shareBtn" onAction="#onClickToShare" text="分享">
+													<graphic>
+														<Icon icon="EL_SHARE" styleClass="el-icon" />
+													</graphic>
+												</Button>
+												<Button fx:id="deleteBtn" onAction="#onClickToDelete" text="删除">
+													<graphic>
+														<Icon icon="EL_DELETE" styleClass="el-icon" />
+													</graphic>
+												</Button>
+												<Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#onClickToLogout" text="退出登录" />
 											</items>
 										</ToolBar>
 									</top>
 								</BorderPane>
 							</top>
+							<bottom>
+								<ToolBar styleClass="status-bar" BorderPane.alignment="CENTER">
+									<items>
+										<Label fx:id="statusLabel" />
+										<Button fx:id="prevBtn" onAction="#onClickToPagination" styleClass="button-link" />
+										<Button fx:id="nextBtn" onAction="#onClickToPagination" styleClass="button-link" />
+									</items>
+								</ToolBar>
+							</bottom>
 						</BorderPane>
 					</content>
 				</Tab>
@@ -142,62 +174,64 @@
 											</center>
 											<top>
 												<BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
-                                       <BorderPane.margin>
-                                          <Insets />
-                                       </BorderPane.margin>
-                                       <padding>
-                                          <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-                                       </padding>
-                                       <left>
+													<BorderPane.margin>
+														<Insets />
+													</BorderPane.margin>
+													<padding>
+														<Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+													</padding>
+													<left>
 														<Label text="下载总进度：" BorderPane.alignment="CENTER" />
-                                       </left>
-                                       <center>
-														<ProgressBar maxWidth="1.7976931348623157E308" minHeight="15.0" prefHeight="15.0" progress="0.5" BorderPane.alignment="CENTER" />
-                                       </center>
-                                       <right>
-                                          <ButtonBar BorderPane.alignment="CENTER">
-                                             <buttons>
+													</left>
+													<center>
+														<ProgressBar minHeight="15.0" prefHeight="15.0" progress="0.5" BorderPane.alignment="CENTER" />
+													</center>
+													<right>
+														<ButtonBar BorderPane.alignment="CENTER">
+															<buttons>
 																<Button mnemonicParsing="false" text="全部开始">
-                                                   <styleClass>
-                                                      <String fx:value="button-primary" />
-                                                      <String fx:value="button-sm" />
-                                                   </styleClass></Button>
+																	<styleClass>
+																		<String fx:value="button-primary" />
+																		<String fx:value="button-sm" />
+																	</styleClass>
+																</Button>
 																<Button mnemonicParsing="false" text="全部取消">
-                                                   <styleClass>
-                                                      <String fx:value="button-primary" />
-                                                      <String fx:value="button-sm" />
-                                                   </styleClass></Button>
-                                             </buttons>
-                                          </ButtonBar>
-                                       </right>
+																	<styleClass>
+																		<String fx:value="button-primary" />
+																		<String fx:value="button-sm" />
+																	</styleClass>
+																</Button>
+															</buttons>
+														</ButtonBar>
+													</right>
 												</BorderPane>
 											</top>
 										</BorderPane>
 									</content>
 								</Tab>
 								<Tab text="下载完成">
-                           <content>
-                              <BorderPane prefHeight="200.0" prefWidth="200.0">
-                                 <center>
-                              										<ListView BorderPane.alignment="CENTER" />
-                                 </center>
-                                 <top>
-                                    <ButtonBar prefHeight="40.0">
-                                      <buttons>
-                                          <Button layoutX="735.0" layoutY="16.0" mnemonicParsing="false" text="全部清除">
-                                             <styleClass>
-                                                <String fx:value="button-danger" />
-                                                <String fx:value="button-sm" />
-                                             </styleClass>
-                                          </Button>
-                                      </buttons>
-                                       <padding>
-                                          <Insets right="10.0" />
-                                       </padding>
-                                    </ButtonBar>
-                                 </top>
-                              </BorderPane>
-                           </content>
+									<content>
+										<BorderPane prefHeight="200.0" prefWidth="200.0">
+											<center>
+												<ListView BorderPane.alignment="CENTER" />
+											</center>
+											<top>
+												<ButtonBar prefHeight="40.0">
+													<buttons>
+														<Button layoutX="735.0" layoutY="16.0" mnemonicParsing="false" text="全部清除">
+															<styleClass>
+																<String fx:value="button-danger" />
+																<String fx:value="button-sm" />
+															</styleClass>
+														</Button>
+													</buttons>
+													<padding>
+														<Insets right="10.0" />
+													</padding>
+												</ButtonBar>
+											</top>
+										</BorderPane>
+									</content>
 								</Tab>
 							</tabs>
 						</TabPane>
@@ -222,17 +256,8 @@
 			</tabs>
 		</TabPane>
 	</center>
-	<bottom>
-		<ToolBar style="-fx-border-width: 0;" styleClass="action-tbar" BorderPane.alignment="CENTER_RIGHT">
-			<items>
-				<Label fx:id="statusLabel" />
-				<IconButton fx:id="prevBtn" icon="CHEVRON_LEFT" onAction="#onClickToPagination" styleClass="button-link" />
-				<IconButton fx:id="nextBtn" icon="CHEVRON_RIGHT" onAction="#onClickToPagination" styleClass="button-link" />
-			</items>
-		</ToolBar>
-	</bottom>
 	<top>
-		<BorderPane BorderPane.alignment="CENTER">
+		<BorderPane styleClass="nav-header">
 			<right>
 				<HBox alignment="CENTER" BorderPane.alignment="CENTER">
 					<children>
@@ -257,26 +282,101 @@
 							</children>
 						</VBox>
 					</children>
-					<padding>
-						<Insets right="50.0" />
-					</padding>
-					<BorderPane.margin>
-						<Insets />
-					</BorderPane.margin>
 				</HBox>
 			</right>
 			<center>
-				<ToolBar id="tab_bar" fx:id="tabBar" maxWidth="-Infinity" BorderPane.alignment="CENTER_LEFT">
-					<items>
-						<ToggleButton fx:id="homeTabBtn" contentDisplay="TOP" mnemonicParsing="false" text="我的网盘" textAlignment="CENTER" />
-						<ToggleButton fx:id="transferTabBtn" contentDisplay="TOP" mnemonicParsing="false" text="下载列表" textAlignment="CENTER" />
-						<ToggleButton fx:id="cloudDownloadTabBtn" contentDisplay="TOP" mnemonicParsing="false" text="离线下载" textAlignment="CENTER" />
-					</items>
-					<padding>
-						<Insets left="20.0" right="10.0" />
-					</padding>
-				</ToolBar>
+				<HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+					<children>
+						<ImageView styleClass="main-logo">
+							<image>
+								<Image url="@/image/main_logo.png" />
+							</image>
+						</ImageView>
+						<ToggleButton fx:id="homeTabBtn" selected="true" text="我的网盘">
+							<toggleGroup>
+								<ToggleGroup fx:id="tabGroup" />
+							</toggleGroup>
+							<HBox.margin>
+								<Insets left="50.0" />
+							</HBox.margin>
+						</ToggleButton>
+						<ToggleButton fx:id="transferTabBtn" text="下载列表" toggleGroup="$tabGroup">
+							<HBox.margin>
+								<Insets left="30.0" />
+							</HBox.margin>
+						</ToggleButton>
+						<ToggleButton fx:id="cloudDownloadTabBtn" text="离线下载" toggleGroup="$tabGroup">
+							<HBox.margin>
+								<Insets left="30.0" />
+							</HBox.margin>
+						</ToggleButton>
+					</children>
+				</HBox>
 			</center>
 		</BorderPane>
 	</top>
+	<left>
+		<VBox prefWidth="165.0" styleClass="nav-memu" BorderPane.alignment="CENTER">
+			<children>
+				<ToggleButton mnemonicParsing="false" text="最近使用">
+					<graphic>
+						<Icon icon="EL_TIME" styleClass="el-icon" />
+					</graphic>
+					<toggleGroup>
+						<ToggleGroup fx:id="homeGroup" />
+					</toggleGroup>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" selected="true" text="全部文件" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon icon="EL_LIST" styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="图片" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon icon="EL_PICTURE_O" styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="视频" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="文档" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="音乐" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="种子" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="其它" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon icon="EL_STAR_OFF" styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="隐藏空间" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon icon="EL_EYE" styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="我的分享" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon icon="EL_SHARE" styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+				<ToggleButton mnemonicParsing="false" text="回收站" toggleGroup="$homeGroup">
+					<graphic>
+						<Icon icon="EL_DELETE" styleClass="el-icon" />
+					</graphic>
+				</ToggleButton>
+			</children>
+		</VBox>
+	</left>
 </BorderPane>

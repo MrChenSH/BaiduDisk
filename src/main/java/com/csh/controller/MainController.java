@@ -33,6 +33,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
@@ -40,12 +41,14 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
@@ -78,6 +81,12 @@ public class MainController extends BorderPane implements Initializable {
 	private ToolBar tabBar;
 
 	@FXML
+	private ToggleGroup tabGroup;
+
+	@FXML
+	private ToggleGroup homeGroup;
+
+	@FXML
 	private ToggleButton homeTabBtn;
 
 	@FXML
@@ -90,25 +99,22 @@ public class MainController extends BorderPane implements Initializable {
 	private Button logoutBtn;
 
 	@FXML
-	private IconButton uploadBtn;
+	private Button uploadBtn;
 
 	@FXML
-	private IconButton downloadBtn;
+	private Button downloadBtn;
 
 	@FXML
-	private IconButton shareBtn;
+	private Button shareBtn;
 
 	@FXML
-	private IconButton deleteBtn;
+	private Button deleteBtn;
 
 	@FXML
 	private PathLink backBtn;
 
 	@FXML
 	private PathLink forwardBtn;
-
-	@FXML
-	private PathLink homeBtn;
 
 	@FXML
 	private HBox breadcrumb;
@@ -123,7 +129,7 @@ public class MainController extends BorderPane implements Initializable {
 	private TextField searchField;
 
 	@FXML
-	private IconButton searchBtn;
+	private Button searchBtn;
 
 	@FXML
 	private TabPane navigationTabPane;
@@ -174,10 +180,10 @@ public class MainController extends BorderPane implements Initializable {
 	private Label statusLabel;
 
 	@FXML
-	private IconButton prevBtn;
+	private Button prevBtn;
 
 	@FXML
-	private IconButton nextBtn;
+	private Button nextBtn;
 
 	private Property<Number> transferNameLabelMaxWidth = new SimpleDoubleProperty();
 
@@ -197,18 +203,13 @@ public class MainController extends BorderPane implements Initializable {
 		quotaText.textProperty().bindBidirectional(RequestProxy.quotaTextProperty);
 		quotaBar.progressProperty().bindBidirectional(RequestProxy.quotaProgressProperty);
 
-		ToggleGroup group = new ToggleGroup();
-		homeTabBtn.setToggleGroup(group);
-		homeTabBtn.setGraphic(new Label(FontAwesome.CLOUD.value));
-		transferTabBtn.setToggleGroup(group);
-		transferTabBtn.setGraphic(new Label(FontAwesome.DOWNLOAD.value));
-		cloudDownloadTabBtn.setToggleGroup(group);
-		cloudDownloadTabBtn.setGraphic(new Label(FontAwesome.CLOUD_DOWNLOAD.value));
-		group.selectToggle(homeTabBtn);
+		tabGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue == null) tabGroup.selectToggle(oldValue);
+			navigationTabPane.getSelectionModel().select(tabGroup.getToggles().indexOf(tabGroup.getSelectedToggle()));
+		});
 
-		group.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
-			if (newValue == null) group.selectToggle(oldValue);
-			navigationTabPane.getSelectionModel().select(group.getToggles().indexOf(group.getSelectedToggle()));
+		homeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue == null) homeGroup.selectToggle(oldValue);
 		});
 
 		checkBoxColumn.setCellValueFactory(new PropertyValueFactory("checked"));
@@ -229,6 +230,12 @@ public class MainController extends BorderPane implements Initializable {
 						int checkeds = getCheckeds().size();
 						checkAllBox.setSelected(checkeds == items.size());
 						checkAllBox.setIndeterminate(checkeds > 0 && checkeds < items.size());
+
+						if (checkBox.isSelected()) {
+							fileTable.getSelectionModel().select(items.indexOf(item));
+						} else {
+							fileTable.getSelectionModel().clearSelection(items.indexOf(item));
+						}
 						this.setGraphic(checkBox);
 						this.setAlignment(Pos.CENTER);
 					}
@@ -248,11 +255,13 @@ public class MainController extends BorderPane implements Initializable {
 								if (fileTable.isEditable()) {
 									fileTable.setEditable(false);
 
-									Node graphic = this.getGraphic();
+									BorderPane pane = (BorderPane) this.getGraphic();
+									Node center = pane.getCenter();
+
 									TextField editor = new TextField(name);
 
 									editor.setOnAction(event -> {
-										this.setGraphic(graphic);
+										pane.setCenter(center);
 										JSONArray fileList = new JSONArray();
 										fileList.add(new JSONObject() {{
 											put("path", item.getPath());
@@ -263,20 +272,27 @@ public class MainController extends BorderPane implements Initializable {
 									});
 
 									editor.focusedProperty().addListener((observable, oldValue, newValue) -> {
-										if (!newValue) this.setGraphic(graphic);
+										if (!newValue) pane.setCenter(center);
 									});
 
-									this.setGraphic(editor);
+									pane.setCenter(editor);
 									editor.requestFocus();
 									if (item.getIsDir()) editor.selectAll();
 									else editor.selectRange(0, name.lastIndexOf('.'));
 								} else {
-									Label icon = new Label(item.getIcon().value);
-									icon.getStyleClass().add("icon");
-
-									Label label = new Label(name, icon);
-									label.setTooltip(new Tooltip(name));
-									this.setGraphic(label);
+									Text text = new Text(name);
+									ImageView imageView = new ImageView(new Image(item.getIcon()));
+									BorderPane pane = new BorderPane(new Text(name));
+									pane.setLeft(imageView);
+									text.getStyleClass().add("file-name-label");
+									text.setOnMouseClicked(event -> {
+										if (MouseButton.PRIMARY.equals(event.getButton())) {
+											onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
+										}
+									});
+									BorderPane.setAlignment(pane.getCenter(), Pos.CENTER_LEFT);
+									this.setGraphic(pane);
+									this.setTooltip(new Tooltip(name));
 								}
 							}
 						}
@@ -285,21 +301,27 @@ public class MainController extends BorderPane implements Initializable {
 		);
 
 		modifyTimeColumn.setCellValueFactory(new PropertyValueFactory("modifyTime"));
+		modifyTimeColumn.setCellFactory(column -> new TableCell<BaiduFile, String>() {
+			@Override
+			protected void updateItem(String item, boolean empty) {
+				this.setText(item);
+				this.setAlignment(Pos.CENTER_LEFT);
+			}
+		});
 
 		fileSizeColumn.setCellValueFactory(new PropertyValueFactory("size"));
 		fileSizeColumn.setCellFactory(column -> new TableCell<BaiduFile, Long>() {
 					@Override
 					protected void updateItem(Long size, boolean empty) {
+						this.setAlignment(Pos.CENTER_LEFT);
 						super.updateItem(size, empty);
 						if (empty) this.setText(null);
 						else {
 							BaiduFile item = (BaiduFile) this.getTableRow().getItem();
 							if (item != null) {
 								if (item.getIsDir()) {
-									this.setText("文件夹");
-									this.setAlignment(Pos.CENTER_LEFT);
+									this.setText("-");
 								} else {
-									this.setAlignment(Pos.CENTER_RIGHT);
 									this.setText(FileUtil.readableFileSize(size).toUpperCase());
 								}
 							}
@@ -308,15 +330,16 @@ public class MainController extends BorderPane implements Initializable {
 				}
 		);
 
+		fileTable.setOnMouseClicked(event -> {
+			logger.info(event);
+		});
+
 		fileTable.setRowFactory(tableView -> {
 			TableRow<BaiduFile> row = new TableRow<>();
 
-			row.selectedProperty().addListener((observable, oldValue, newValue) -> {
-				this.checkAll(false);
-				fileTable.getSelectionModel().getSelectedItems().forEach(item -> item.setChecked(true));
-			});
-
 			row.setOnMouseClicked(event -> {
+				this.checkAll(false);
+				tableView.getSelectionModel().getSelectedItems().forEach(item -> item.setChecked(true));
 				if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
 					this.onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
 				}
@@ -335,10 +358,8 @@ public class MainController extends BorderPane implements Initializable {
 				else {
 					BorderPane pane = new BorderPane();
 
-					Label icon = new Label(item.getIcon().value);
-					icon.getStyleClass().add("icon");
-					icon.setStyle("-fx-font-size: 20px");
-					icon.setPrefWidth(40);
+					ImageView icon = new ImageView(new Image(item.getIcon()));
+					icon.setFitWidth(40);
 
 					Label nameLabel = new Label(item.getFileName());
 					nameLabel.maxWidthProperty().bindBidirectional(transferNameLabelMaxWidth);
@@ -619,20 +640,11 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	@FXML
-	private void onTableMenuHidden() {
-//        contextMenu.setStyle("visibility:hidden");
-	}
-
-	@FXML
 	private void onClickToOpenFile(ActionEvent event) {
 		Object source = event.getSource();
 		ObservableList<Node> links = breadcrumb.getChildren();
 
-		if (homeBtn.equals(source)) {
-			links.clear();
-			links.add(homeLink);
-			this.loadTableData(homeLink.getPath());
-		} else if (source instanceof PathLink && links.contains(source)) {
+		if (source instanceof PathLink && links.contains(source)) {
 			PathLink link = (PathLink) source;
 			int index = links.indexOf(link);
 			if (index == links.size() - 1) return;
@@ -648,7 +660,7 @@ public class MainController extends BorderPane implements Initializable {
 					link.setOnAction(homeLink.getOnAction());
 					link.setTooltip(new Tooltip(item.getFileName()));
 					link.getStyleClass().addAll(homeLink.getStyleClass());
-					links.addAll(new Label(homeBtn.getPath()), link);
+					links.addAll(new Label(" > "), link);
 
 					this.loadTableData(item.getPath());
 				} else {
@@ -677,8 +689,12 @@ public class MainController extends BorderPane implements Initializable {
 	 */
 	@FXML
 	private void onClickToSearchFile() {
-		if (StrUtil.isNotBlank(searchField.getText())) {
+		String str = searchField.getText();
+		if (StrUtil.isNotBlank(str)) {
 			refreshBtn.setPath(null);
+			ObservableList<Node> links = breadcrumb.getChildren();
+			links.clear();
+			links.addAll(homeLink, new Label(" > "), new Label("\"" + str + "\"的搜索结果"));
 			new Thread(new LoadTableDataTask(true)).start();
 		}
 	}
@@ -701,6 +717,11 @@ public class MainController extends BorderPane implements Initializable {
 		} else {
 
 		}
+	}
+
+	@FXML
+	private void onClick(Event event) {
+		logger.info(event);
 	}
 
 	/**
@@ -743,7 +764,7 @@ public class MainController extends BorderPane implements Initializable {
 
 		WebEngine engine = loginWiew.getEngine();
 
-		this.homePane.setCenter(loginWiew);
+		this.setCenter(loginWiew);
 
 		try {
 			URI uri = URI.create(Constant.HOME_URL);
@@ -780,7 +801,7 @@ public class MainController extends BorderPane implements Initializable {
 	 * 添加一个定时任务，每30分钟刷新一次网盘配额信息和用户信息
 	 */
 	private void panTask() {
-		loadTableData(homeBtn.getPath());
+		loadTableData(homeLink.getPath());
 		RequestProxy.getYunData();
 		RequestProxy.getQuotaInfos();
 		CronUtil.schedule("*/30 * * * *", (Runnable) () -> {
@@ -796,6 +817,7 @@ public class MainController extends BorderPane implements Initializable {
 	 * @param path 网盘路径
 	 */
 	private void loadTableData(String path) {
+		searchField.clear();
 		refreshBtn.setPath(path);
 		new Thread(new LoadTableDataTask(false)).start();
 	}

@@ -25,8 +25,11 @@ public class App extends Application {
 
 	public static final Font FontAwesome;
 
+	public static final Font ElementIcon;
+
 	static {
 		FontAwesome = Font.loadFont(App.class.getResourceAsStream("/fonts/fontawesome.ttf"), 16);
+		ElementIcon = Font.loadFont(App.class.getResourceAsStream("/fonts/element-icons.ttf"), 16);
 
 		// 程序启动时检测cookie文件是否存在，不存在则新建
 		File file = new File(System.getProperty("user.dir") + "/config/cookie.ini");
@@ -49,6 +52,8 @@ public class App extends Application {
 			MainController controller = (MainController) loadFXML("/fxml/Main.fxml");
 			primaryStage.centerOnScreen();
 			primaryStage.setTitle("百度网盘");
+			primaryStage.setMinHeight(680);
+			primaryStage.setMinWidth(1000);
 			primaryStage.getIcons().add(new Image("/image/logo.png"));
 			primaryStage.show();
 			new Thread(controller.new LoginCheckTask()).start();

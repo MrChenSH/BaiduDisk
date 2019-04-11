@@ -89,6 +89,11 @@ public final class Constant {
 		public static final String TEXT = "(.txt|.log|.ini|.properties)$";
 
 		/**
+		 * 代码
+		 */
+		public static final String CODE = "(.js|.css|.html|.xml|.json|.java|.jsp|.c|.cs|.php|.h|.bat|.sh)$";
+
+		/**
 		 * 图片
 		 */
 		public static final String IMAGE = "(.jpg|.png|.jpeg|.gif|.bmp)$";
@@ -109,17 +114,22 @@ public final class Constant {
 		public static final String ARCHIVE = "(.zip|.rar|.7z|.cab|.tgz|.tar.gz|.tar.xz|.lz|.deb)$";
 	}
 
-	public static final Map<String, FontAwesome> ICON_MAP = new HashMap<String, FontAwesome>() {{
-		put("(.apk)$", FontAwesome.ANDROID);
-		put("(.pdf)$", FontAwesome.FILE_PDF);
-		put("(.font|.ttf)$", FontAwesome.FILE_FONT);
-		put("(.ppt|.pptx)$", FontAwesome.FILE_PPT);
-		put("(.doc|.docx)$", FontAwesome.FILE_WORD);
-		put("(.xls|.xlsx)$", FontAwesome.FILE_EXCEL);
-		put(FileTypeRegx.TEXT, FontAwesome.FILE_TEXT);
-		put(FileTypeRegx.IMAGE, FontAwesome.FILE_IMAGE);
-		put(FileTypeRegx.AUDIO, FontAwesome.FILE_AUDIO);
-		put(FileTypeRegx.VIDEO, FontAwesome.FILE_VIDEO);
-		put(FileTypeRegx.ARCHIVE, FontAwesome.FILE_ARCHIVE);
-	}};
+	public static final Map<String, String> ICON_MAP = new HashMap<>();
+
+	static {
+		ICON_MAP.put("(.apk)$", "image/FileType/Middle/ApkType.png");
+		ICON_MAP.put("(.pdf)$", "image/FileType/Middle/PdfType.png");
+		ICON_MAP.put("(.exe|.iso)$", "image/FileType/Middle/ExeType.png");
+		ICON_MAP.put("(.ppt|.pptx)$", "image/FileType/Middle/PptType.png");
+		ICON_MAP.put("(.doc|.docx)$", "image/FileType/Middle/DocType.png");
+		ICON_MAP.put("(.xls|.xlsx)$", "image/FileType/Middle/XlsType.png");
+		ICON_MAP.put("(.torrent)$", "image/FileType/Middle/TorrentType.png");
+		ICON_MAP.put("(.font|.ttf)$", "image/FileType/Middle/FontType.png");
+		ICON_MAP.put(FileTypeRegx.TEXT, "image/FileType/Middle/TxtType.png");
+		ICON_MAP.put(FileTypeRegx.CODE, "image/FileType/Middle/CodeType.png");
+		ICON_MAP.put(FileTypeRegx.IMAGE, "image/FileType/Middle/ImgType.png");
+		ICON_MAP.put(FileTypeRegx.AUDIO, "image/FileType/Middle/MusicType.png");
+		ICON_MAP.put(FileTypeRegx.VIDEO, "image/FileType/Middle/VideoType.png");
+		ICON_MAP.put(FileTypeRegx.ARCHIVE, "image/FileType/Middle/RarType.png");
+	}
 }

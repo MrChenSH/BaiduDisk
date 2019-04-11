@@ -69,7 +69,7 @@ public class RequestProxy {
 	public static String sign() {
 		try {
 			// 执行签名脚本
-			Object obj = engine.invokeFunction("sign", RequestProxy.YUN_DATA.getStr("sign3"), RequestProxy.YUN_DATA.getStr("sign1"));
+			Object obj = engine.invokeFunction("sign", YUN_DATA.getStr("sign3"), YUN_DATA.getStr("sign1"));
 			// 进行Base64加密
 			return Base64.encode(obj.toString(), CharsetUtil.ISO_8859_1);
 		} catch (Exception e) {
