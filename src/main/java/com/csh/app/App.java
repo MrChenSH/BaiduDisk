@@ -49,14 +49,15 @@ public class App extends Application {
 		logger.info("程序启动中，请稍候……");
 		try {
 			App.primaryStage = primaryStage;
-			MainController controller = (MainController) loadFXML("/fxml/Main.fxml");
+			App.loadFXML("/fxml/Main.fxml");
+
 			primaryStage.centerOnScreen();
 			primaryStage.setTitle("百度网盘");
 			primaryStage.setMinHeight(680);
 			primaryStage.setMinWidth(1000);
 			primaryStage.getIcons().add(new Image("/image/logo.png"));
 			primaryStage.show();
-			new Thread(controller.new LoginCheckTask()).start();
+
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}

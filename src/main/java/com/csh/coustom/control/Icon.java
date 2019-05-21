@@ -31,4 +31,11 @@ public class Icon extends Label {
 	public Icon(FontIcon icon) {
 		this.setIcon(icon);
 	}
+
+	public Icon(FontIcon icon, String... className) {
+		this.setIcon(icon);
+		this.getStyleClass().addAll(className);
+	}
+
+	;
 }

@@ -316,67 +316,9 @@
 		</BorderPane>
 	</top>
 	<left>
-		<VBox prefWidth="165.0" styleClass="nav-memu" BorderPane.alignment="CENTER">
-			<children>
-				<ToggleButton mnemonicParsing="false" text="最近使用">
-					<graphic>
-						<Icon icon="EL_TIME" styleClass="el-icon" />
-					</graphic>
-					<toggleGroup>
-						<ToggleGroup fx:id="homeGroup" />
-					</toggleGroup>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" selected="true" text="全部文件" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon icon="EL_LIST" styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="图片" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon icon="EL_PICTURE_O" styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="视频" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="文档" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="音乐" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="种子" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="其它" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon icon="EL_STAR_OFF" styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="隐藏空间" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon icon="EL_EYE" styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="我的分享" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon icon="EL_SHARE" styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-				<ToggleButton mnemonicParsing="false" text="回收站" toggleGroup="$homeGroup">
-					<graphic>
-						<Icon icon="EL_DELETE" styleClass="el-icon" />
-					</graphic>
-				</ToggleButton>
-			</children>
-		</VBox>
+		<VBox fx:id="categroy" prefWidth="165.0" styleClass="nav-memu" BorderPane.alignment="CENTER" />
 	</left>
+   <right>
+      <ListView fx:id="menu" prefWidth="165" BorderPane.alignment="CENTER" />
+   </right>
 </BorderPane>

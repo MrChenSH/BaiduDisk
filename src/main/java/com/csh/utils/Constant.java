@@ -1,5 +1,12 @@
 package com.csh.utils;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.CharsetUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,32 +41,37 @@ public final class Constant {
 	/**
 	 * 获取网盘配额信息URL
 	 */
-	public static final String QUOTA_URL = "https://pan.baidu.com/api/quota?";
+	public static final String QUOTA_URL = "https://pan.baidu.com/api/quota";
 
 	/**
 	 * 获取文件列表URL
 	 */
-	public static final String LIST_URL = "https://pan.baidu.com/api/list?";
+	public static final String LIST_URL = "https://pan.baidu.com/api/list";
+
+	/**
+	 * 文件分类列表URL
+	 */
+	public static final String CATEGORY_URL = "https://pan.baidu.com/api/categorylist";
 
 	/**
 	 * 搜索文件列表URL
 	 */
-	public static final String SEARCH_URL = "https://pan.baidu.com/api/search?";
+	public static final String SEARCH_URL = "https://pan.baidu.com/api/search";
 
 	/**
 	 * 网盘文件管理URL，重命名、删除等操作
 	 */
-	public static final String MANAGER_URL = "https://pan.baidu.com/api/filemanager?";
+	public static final String MANAGER_URL = "https://pan.baidu.com/api/filemanager";
 
 	/**
 	 * 网盘分享URL
 	 */
-	public static final String SHARE_URL = "https://pan.baidu.com/share/set?";
+	public static final String SHARE_URL = "https://pan.baidu.com/share/set";
 
 	/**
 	 * 获取下载链接URL
 	 */
-	public static final String DOWNLOAD_URL = "https://pan.baidu.com/api/download?";
+	public static final String DOWNLOAD_URL = "https://pan.baidu.com/api/download";
 
 	public static final Integer SUCCEED = 0;
 
@@ -115,6 +127,11 @@ public final class Constant {
 	}
 
 	public static final Map<String, String> ICON_MAP = new HashMap<>();
+
+	/**
+	 * 文件分类菜单
+	 */
+	public static final JSONArray CATEGORY = JSONUtil.readJSONArray(new File(Constant.class.getResource("/json/category.json").getFile()), CharsetUtil.CHARSET_UTF_8);
 
 	static {
 		ICON_MAP.put("(.apk)$", "image/FileType/Middle/ApkType.png");

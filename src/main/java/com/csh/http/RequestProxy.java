@@ -4,7 +4,9 @@ package com.csh.http;
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.CharsetUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
@@ -15,13 +17,11 @@ import cn.hutool.script.JavaScriptEngine;
 import cn.hutool.script.ScriptUtil;
 import com.csh.coustom.dialog.MessageDialog;
 import com.csh.model.BaiduFile;
+import com.csh.service.LoadDataService;
 import com.csh.utils.Constant;
 import com.csh.utils.CookieUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javafx.application.Platform;
-import javafx.beans.property.*;
-import javafx.scene.image.Image;
 import org.apache.log4j.Logger;
 
 import java.io.FileReader;
@@ -36,14 +36,6 @@ public class RequestProxy {
 	private static final Logger logger = Logger.getLogger(RequestProxy.class);
 
 	public static JSONObject YUN_DATA = new JSONObject();
-
-	public static StringProperty usernameProperty = new SimpleStringProperty("百度网盘");
-
-	public static ObjectProperty<Image> photoProperty = new SimpleObjectProperty<>(new Image("image/logo.png"));
-
-	public static StringProperty quotaTextProperty = new SimpleStringProperty("0GB/0GB");
-
-	public static DoubleProperty quotaProgressProperty = new SimpleDoubleProperty(1.0);
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -126,15 +118,9 @@ public class RequestProxy {
 	public static JSONObject getYunData() {
 		try (HttpResponse rs = httpGet(Constant.HOME_URL, null)) {
 			Matcher matcher = Pattern.compile("var context=(.*);").matcher(rs.body());
-			if (matcher.find()) {
-				YUN_DATA = JSONUtil.parseObj(matcher.group(1));
-				Platform.runLater(() -> {
-					usernameProperty.set(YUN_DATA.getStr(Constant.NAME_KEY));
-					photoProperty.set(new Image(YUN_DATA.getStr(Constant.AVATAR_KEY)));
-				});
-			}
+			if (matcher.find()) YUN_DATA = JSONUtil.parseObj(matcher.group(1));
 		} catch (Exception e) {
-			MessageDialog.show("网盘信息获取失败，请稍后重试！", e);
+			throw e;
 		} finally {
 			logger.info(YUN_DATA.toStringPretty());
 			return YUN_DATA;
@@ -146,7 +132,7 @@ public class RequestProxy {
 	 *
 	 * @return
 	 */
-	public static JSONObject getQuotaInfos() {
+	public static JSONObject getQuotaInfo() {
 		JSONObject params = new JSONObject() {{
 			put("checkexpire", 1);
 			put("checkfree", 1);
@@ -163,89 +149,65 @@ public class RequestProxy {
 
 			logger.info(result.toStringPretty());
 
+			if (Constant.SUCCEED.equals(result.get("errno"))) return result;
+			else throw new RuntimeException("网盘信息获取失败！");
+		} catch (Exception e) {
+			throw e;
+		}
+	}
+
+	/**
+	 * 加载网盘文件
+	 *
+	 * @param query
+	 * @return
+	 */
+	public static List<BaiduFile> loadFiles(LoadDataService.Query query) {
+		if (StrUtil.isBlank(query.getUrl())) return Collections.emptyList();
+
+		JSONObject params = new JSONObject() {{
+			put("order", "name");
+			put("desc", 0);
+			put("clienttype", 0);
+			put("showempty", 0);
+			put("web", 1);
+			put("channel", "chunlei");
+			put("appid", 250528);
+			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
+			put("logid", logId());
+		}};
+
+		switch (query.getUrl()) {
+			case Constant.LIST_URL:
+				params.put("dir", ObjectUtil.defaultIfNull(query.getPath(), "/"));
+				break;
+			case Constant.CATEGORY_URL:
+				params.put("category", query.getCategroy());
+				break;
+			case Constant.SEARCH_URL:
+				params.put("recursion", 1);
+				params.put("key", query.getSerach());
+				break;
+			default:
+				return Collections.emptyList();
+		}
+
+		try (HttpResponse rs = httpGet(query.getUrl(), params)) {
+			JSONObject result = JSONUtil.parseObj(rs.body());
+
+			logger.info(result.toStringPretty());
+
 			if (Constant.SUCCEED.equals(result.get("errno"))) {
-				Platform.runLater(() -> {
-					double used = result.getDouble("used");
-					double total = result.getDouble("total");
-					quotaProgressProperty.set(used / total);
-					quotaTextProperty.set(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "GB/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "GB");
-				});
+				JSONArray list = new JSONArray();
+				if (result.containsKey("list")) {
+					list = result.getJSONArray("list");
+				} else if (result.containsKey("info")) {
+					list = result.getJSONArray("info");
+				}
 
-				return result;
-			} else throw new RuntimeException("网盘信息获取失败！");
-		} catch (Exception e) {
-			MessageDialog.show("网盘信息获取失败，请稍后重试！", e);
-			throw e;
-		}
-	}
-
-	/**
-	 * 根据路径获取文件列表
-	 *
-	 * @param path
-	 * @return
-	 * @throws Exception
-	 */
-	public static List<BaiduFile> getFileList(String path) {
-		JSONObject params = new JSONObject() {{
-			put("dir", path);
-			put("order", "name");
-			put("desc", 0);
-			put("clienttype", 0);
-			put("showempty", 0);
-			put("web", 1);
-			put("channel", "chunlei");
-			put("appid", 250528);
-			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
-			put("logid", logId());
-		}};
-
-		try (HttpResponse rs = httpGet(Constant.LIST_URL, params)) {
-			JSONObject result = JSONUtil.parseObj(rs.body());
-
-			logger.info(result.toStringPretty());
-
-			if (Constant.SUCCEED.equals(result.get("errno")) && result.containsKey("list")) {
-				return convertJSON2List(result.getJSONArray("list"));
+				return convertJSON2List(list);
 			} else throw new RuntimeException("文件列表获取失败！");
 		} catch (Exception e) {
-			MessageDialog.show("文件列表获取失败，请稍后重试！", e);
-			throw e;
-		}
-	}
-
-	/**
-	 * 搜索网盘文件
-	 *
-	 * @param keyword
-	 * @return
-	 * @throws Exception
-	 */
-	public static List<BaiduFile> searchFileList(String keyword) {
-		JSONObject params = new JSONObject() {{
-			put("recursion", 1);
-			put("order", "name");
-			put("desc", 0);
-			put("clienttype", 0);
-			put("showempty", 0);
-			put("web", 1);
-			put("key", keyword);
-			put("channel", "chunlei");
-			put("appid", 250528);
-			put("bdstoken", YUN_DATA.getStr(Constant.TOKEN_KEY));
-			put("logid", logId());
-		}};
-
-		try (HttpResponse rs = httpGet(Constant.SEARCH_URL, params)) {
-			JSONObject result = JSONUtil.parseObj(rs.body());
-
-			logger.info(result.toStringPretty());
-
-			if (Constant.SUCCEED.equals(result.get("errno")) && result.containsKey("list")) {
-				return convertJSON2List(result.getJSONArray("list"));
-			} else throw new RuntimeException("文件列表获取失败！");
-		} catch (Exception e) {
-			MessageDialog.show("文件列表获取失败，请稍后重试！", e);
 			throw e;
 		}
 	}

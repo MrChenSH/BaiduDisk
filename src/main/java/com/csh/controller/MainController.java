@@ -11,6 +11,7 @@ import cn.hutool.cron.CronUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.csh.app.App;
+import com.csh.coustom.control.Icon;
 import com.csh.coustom.control.IconButton;
 import com.csh.coustom.control.PathLink;
 import com.csh.coustom.dialog.ImageDialog;
@@ -20,9 +21,13 @@ import com.csh.coustom.dialog.ShareDialog;
 import com.csh.http.DownloadUtil;
 import com.csh.http.RequestProxy;
 import com.csh.model.BaiduFile;
+import com.csh.model.Categroy;
+import com.csh.service.LoadDataService;
+import com.csh.service.LoginService;
 import com.csh.utils.Constant;
 import com.csh.utils.CookieUtil;
 import com.csh.utils.FontAwesome;
+import com.csh.utils.FontIcon;
 import com.sun.webkit.network.CookieManager;
 import javafx.application.Platform;
 import javafx.beans.property.Property;
@@ -66,6 +71,12 @@ public class MainController extends BorderPane implements Initializable {
 	private static final Logger logger = Logger.getLogger(MainController.class);
 
 	@FXML
+	private VBox categroy;
+
+	@FXML
+	private ListView<Categroy> menu;
+
+	@FXML
 	private ImageView userImage;
 
 	@FXML
@@ -82,9 +93,6 @@ public class MainController extends BorderPane implements Initializable {
 
 	@FXML
 	private ToggleGroup tabGroup;
-
-	@FXML
-	private ToggleGroup homeGroup;
 
 	@FXML
 	private ToggleButton homeTabBtn;
@@ -185,31 +193,120 @@ public class MainController extends BorderPane implements Initializable {
 	@FXML
 	private Button nextBtn;
 
+	private ProgressIndicator loading = new ProgressIndicator();
+
+	private Label placeholder = new Label("正在登录，请稍候……", loading);
+
 	private Property<Number> transferNameLabelMaxWidth = new SimpleDoubleProperty();
+
+	private ToggleGroup categoryGroup = new ToggleGroup();
+
+	private List<ToggleButton> menus = new ArrayList<>();
+
+	private LoginService loginService = new LoginService();
+
+	private LoadDataService loadDataService = new LoadDataService();
+
+	/**
+	 * 初始化类目菜单
+	 */
+	public void initMenu() {
+		Constant.CATEGORY.forEach(item -> {
+			JSONObject obj = (JSONObject) item;
+
+			Icon icon = new Icon();
+			icon.getStyleClass().add("el-icon");
+			ToggleButton toggleButton = new ToggleButton(obj.getStr("text"));
+
+			toggleButton.setGraphic(icon);
+			toggleButton.setToggleGroup(categoryGroup);
+
+			if (obj.containsKey("icon")) {
+				icon.setIcon(FontIcon.valueOf(FontIcon.class, obj.getStr("icon")));
+			}
+
+			menus.add(toggleButton);
+		});
+
+		menu.getItems().addAll(Constant.CATEGORY.toList(Categroy.class));
+		menu.getSelectionModel().select(1);
+		menu.setCellFactory(list -> new ListCell<Categroy>() {
+			@Override
+			protected void updateItem(Categroy item, boolean empty) {
+				super.updateItem(item, empty);
+				if (item != null) this.setText(item.getText());
+			}
+		});
+
+		menu.getSelectionModel().selectedItemProperty().addListener(observable -> {
+			logger.info(observable);
+		});
+
+		categoryGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue != null) {
+				int index = menus.indexOf(newValue);
+				JSONObject obj = Constant.CATEGORY.getJSONObject(index);
+				LoadDataService.Query query = loadDataService.getQuery();
+
+				if (Constant.SEARCH_URL.equals(query.getUrl())) return;
+
+				query.setPath("/");
+				query.setUrl(obj.getStr("url"));
+				query.setText(obj.getStr("text"));
+				query.setCategroy(obj.getInt("category"));
+
+				ObservableList<Node> links = breadcrumb.getChildren();
+				links.clear();
+				links.add(homeLink);
+
+				if (index != 1) {
+					links.addAll(new Label(" > "), new Label(query.getText()));
+				}
+
+				if (loginService.getValue().get()) loadDataService.load(query);
+			} else categoryGroup.selectToggle(oldValue);
+		});
+
+		categroy.getChildren().addAll(menus);
+		categoryGroup.selectToggle(menus.get(1));
+	}
+
+	private void locinCheck() {
+		loginService.start();
+
+		loginService.setOnSucceeded(event -> this.initMenu());
+		loginService.setOnRunning(event -> statusLabel.setText("正在登录……"));
+		loginService.setOnFailed(event -> statusLabel.setText(loginService.getException().getMessage()));
+
+		userImage.imageProperty().bind(loginService.avatarProperty());
+		userLabel.textProperty().bind(loginService.usernameProperty());
+		quotaText.textProperty().bind(loginService.quotaTextProperty());
+		quotaBar.progressProperty().bind(loginService.quotaProgressProperty());
+	}
+
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		ProgressIndicator loading = new ProgressIndicator();
-		Label placeholder = new Label("正在登录，请稍候……", loading);
+		this.locinCheck();
 
 		loading.setPadding(new Insets(5));
+		loading.progressProperty().bind(loadDataService.progressProperty());
+
 		placeholder.setContentDisplay(ContentDisplay.TOP);
+		placeholder.textProperty().bind(statusLabel.textProperty());
+		placeholder.visibleProperty().bind(loadDataService.runningProperty());
+
+		loadDataService.setOnRunning(event -> statusLabel.setText("正在获取文件列表……"));
+		loadDataService.setOnFailed(event -> statusLabel.setText(loadDataService.getException().getMessage()));
+		loadDataService.setOnSucceeded(event -> statusLabel.setText("加载完成，共" + loadDataService.getValue().size() + "项"));
 
 		fileTable.setPlaceholder(placeholder);
+		fileTable.itemsProperty().bind(loadDataService.valueProperty());
 		fileTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
-		userImage.imageProperty().bindBidirectional(RequestProxy.photoProperty);
-		userLabel.textProperty().bindBidirectional(RequestProxy.usernameProperty);
-		quotaText.textProperty().bindBidirectional(RequestProxy.quotaTextProperty);
-		quotaBar.progressProperty().bindBidirectional(RequestProxy.quotaProgressProperty);
 
 		tabGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
 			if (newValue == null) tabGroup.selectToggle(oldValue);
 			navigationTabPane.getSelectionModel().select(tabGroup.getToggles().indexOf(tabGroup.getSelectedToggle()));
-		});
-
-		homeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
-			if (newValue == null) homeGroup.selectToggle(oldValue);
 		});
 
 		checkBoxColumn.setCellValueFactory(new PropertyValueFactory("checked"));
@@ -259,6 +356,7 @@ public class MainController extends BorderPane implements Initializable {
 									Node center = pane.getCenter();
 
 									TextField editor = new TextField(name);
+									editor.setStyle("-fx-font-size: 12px");
 
 									editor.setOnAction(event -> {
 										pane.setCenter(center);
@@ -331,7 +429,7 @@ public class MainController extends BorderPane implements Initializable {
 		);
 
 		fileTable.setOnMouseClicked(event -> {
-			logger.info(event);
+//			logger.info(event);
 		});
 
 		fileTable.setRowFactory(tableView -> {
@@ -340,7 +438,7 @@ public class MainController extends BorderPane implements Initializable {
 			row.setOnMouseClicked(event -> {
 				this.checkAll(false);
 				tableView.getSelectionModel().getSelectedItems().forEach(item -> item.setChecked(true));
-				if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
+				if (!row.isEmpty() && MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
 					this.onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
 				}
 			});
@@ -531,7 +629,10 @@ public class MainController extends BorderPane implements Initializable {
 	 */
 	private List<BaiduFile> eachFiles(BaiduFile root, List<BaiduFile> files) {
 		if (root.getIsDir()) {
-			List<BaiduFile> fileList = RequestProxy.getFileList(root.getPath());
+			LoadDataService.Query query = loadDataService.new Query();
+			query.setPath(root.getPath());
+			query.setUrl(Constant.LIST_URL);
+			List<BaiduFile> fileList = RequestProxy.loadFiles(query);
 			fileList.forEach(file -> this.eachFiles(file, files));
 		} else {
 			files.add(root);
@@ -643,13 +744,19 @@ public class MainController extends BorderPane implements Initializable {
 	private void onClickToOpenFile(ActionEvent event) {
 		Object source = event.getSource();
 		ObservableList<Node> links = breadcrumb.getChildren();
+		LoadDataService.Query query = loadDataService.getQuery();
+		query.setUrl(Constant.LIST_URL);
 
 		if (source instanceof PathLink && links.contains(source)) {
 			PathLink link = (PathLink) source;
 			int index = links.indexOf(link);
 			if (index == links.size() - 1) return;
-			this.loadTableData(link.getPath());
 			links.remove(index + 1, links.size());
+
+			query.setPath(link.getPath());
+			loadDataService.load(query);
+
+			if (source.equals(homeLink)) categoryGroup.selectToggle(menus.get(1));
 		} else {
 			BaiduFile item = fileTable.getSelectionModel().getSelectedItem();
 			if (item != null) {
@@ -662,7 +769,8 @@ public class MainController extends BorderPane implements Initializable {
 					link.getStyleClass().addAll(homeLink.getStyleClass());
 					links.addAll(new Label(" > "), link);
 
-					this.loadTableData(item.getPath());
+					query.setPath(link.getPath());
+					loadDataService.load(query);
 				} else {
 					String fileName = item.getFileName();
 					if (ReUtil.contains(Constant.FileTypeRegx.IMAGE, fileName)) {
@@ -681,7 +789,7 @@ public class MainController extends BorderPane implements Initializable {
 	 */
 	@FXML
 	private void onClickToRefresh() {
-		new Thread(new LoadTableDataTask(refreshBtn.getPath() == null)).start();
+		loadDataService.restart();
 	}
 
 	/**
@@ -695,7 +803,14 @@ public class MainController extends BorderPane implements Initializable {
 			ObservableList<Node> links = breadcrumb.getChildren();
 			links.clear();
 			links.addAll(homeLink, new Label(" > "), new Label("\"" + str + "\"的搜索结果"));
-			new Thread(new LoadTableDataTask(true)).start();
+
+			LoadDataService.Query query = loadDataService.new Query();
+
+			query.setSerach(str);
+			query.setUrl(Constant.SEARCH_URL);
+
+			loadDataService.load(query);
+			categoryGroup.selectToggle(menus.get(1));
 		}
 	}
 
@@ -748,17 +863,6 @@ public class MainController extends BorderPane implements Initializable {
 		}
 	}
 
-	/**
-	 * 程序启动时登录验证
-	 */
-	public void loginCheck() {
-		if (CookieUtil.COOKIES.isEmpty()) statusLabel.setText("请登录百度网盘账号");
-		else if (RequestProxy.getYunData().isEmpty()) statusLabel.setText("登录信息已过期，请重新登录……");
-		else this.panTask();
-
-		if (RequestProxy.YUN_DATA.isEmpty()) this.showLoginView();
-	}
-
 	private void showLoginView() {
 		WebView loginWiew = new WebView();
 
@@ -801,28 +905,16 @@ public class MainController extends BorderPane implements Initializable {
 	 * 添加一个定时任务，每30分钟刷新一次网盘配额信息和用户信息
 	 */
 	private void panTask() {
-		loadTableData(homeLink.getPath());
 		RequestProxy.getYunData();
-		RequestProxy.getQuotaInfos();
+		RequestProxy.getQuotaInfo();
 		CronUtil.schedule("*/30 * * * *", (Runnable) () -> {
 			RequestProxy.getYunData();
-			RequestProxy.getQuotaInfos();
+			RequestProxy.getQuotaInfo();
 		});
 		CronUtil.start();
 	}
 
-	/**
-	 * 加载数据
-	 *
-	 * @param path 网盘路径
-	 */
-	private void loadTableData(String path) {
-		searchField.clear();
-		refreshBtn.setPath(path);
-		new Thread(new LoadTableDataTask(false)).start();
-	}
-
-	public class LoginCheckTask extends Task {
+	/*public class LoginCheckTask extends Task {
 
 		@Override
 		protected void done() {
@@ -840,50 +932,6 @@ public class MainController extends BorderPane implements Initializable {
 		protected Object call() {
 			return null;
 		}
-	}
+	}*/
 
-	private class LoadTableDataTask extends Task<ObservableList<BaiduFile>> {
-
-		private boolean isSearch;
-
-		private ProgressIndicator loading = new ProgressIndicator();
-
-		private Label placeholder = new Label("正在获取文件列表，请稍候……", loading);
-
-
-		public LoadTableDataTask(boolean isSearch) {
-			this.isSearch = isSearch;
-
-			placeholder.setContentDisplay(ContentDisplay.TOP);
-			loading.setPadding(new Insets(5));
-
-			checkAllBox.setSelected(false);
-			checkAllBox.setIndeterminate(false);
-
-			fileTable.itemsProperty().bind(this.valueProperty());
-			fileTable.setPlaceholder(placeholder);
-			statusLabel.setText("正在获取文件列表……");
-		}
-
-		@Override
-		protected void done() {
-			Platform.runLater(() -> {
-				fileTable.setPlaceholder(null);
-				statusLabel.setText("加载完成，共" + this.getValue().size() + "项");
-			});
-			super.done();
-		}
-
-		@Override
-		protected ObservableList<BaiduFile> call() {
-			ObservableList<BaiduFile> list;
-			if (isSearch) {
-				list = FXCollections.observableArrayList(RequestProxy.searchFileList(searchField.getText()));
-			} else {
-				list = FXCollections.observableArrayList(RequestProxy.getFileList(refreshBtn.getPath()));
-			}
-			if (list == null) list = FXCollections.emptyObservableList();
-			return list;
-		}
-	}
 }

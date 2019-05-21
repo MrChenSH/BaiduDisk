@@ -1,12 +1,14 @@
 package com.csh.http;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.http.*;
+import cn.hutool.http.Header;
+import cn.hutool.http.HttpConnection;
 import com.csh.utils.CookieUtil;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.Proxy;
 
 /**
  * Created by amosli on 14-7-2.
@@ -28,6 +30,11 @@ public class DownloadUtil {
 	// 定义下载的文件的总大小
 	private int fileSize;
 
+	/**
+	 * 下载代理
+	 */
+	public static final Proxy proxy = Proxy.NO_PROXY;
+
 	private long total;
 
 	public int getFileSize() {
@@ -44,10 +51,10 @@ public class DownloadUtil {
 
 	public void download() {
 		try {
-			HttpConnection conn = HttpConnection.create(url, Method.GET).setCookie(CollectionUtil.join(CookieUtil.COOKIES, "; "));
+			HttpConnection conn = HttpConnection.create(url, proxy).setCookie(CollectionUtil.join(CookieUtil.COOKIES, "; "));
 			if (conn.responseCode() == 302) {
 				this.url = conn.header(Header.LOCATION);
-				conn = HttpConnection.create(url, Method.GET).setCookie(CollectionUtil.join(CookieUtil.COOKIES, "; "));
+				conn = HttpConnection.create(url, proxy).setCookie(CollectionUtil.join(CookieUtil.COOKIES, "; "));
 			}
 
 			if (conn.responseCode() == 200) {
@@ -125,7 +132,7 @@ public class DownloadUtil {
 		@Override
 		public void run() {
 			try {
-				HttpConnection conn = new HttpConnection(url, Method.GET)
+				HttpConnection conn = HttpConnection.create(url, proxy)
 						.header(Header.CONNECTION, "keep-alive", true)
 						.setCookie(CollectionUtil.join(CookieUtil.COOKIES, "; "));
 
@@ -167,7 +174,7 @@ public class DownloadUtil {
 			try {
 				logger.info("理论线程:" + threadId + ",开始位置:" + startThred + ",结束位置:" + endThread);
 
-				HttpConnection conn = HttpConnection.create(url, Method.GET);
+				HttpConnection conn = HttpConnection.create(url, proxy);
 //						.header(Header.CONNECTION, "keep-alive", true)
 //						设置分段下载的头信息  Range:做分段
 //						.header("range", "bytes=" + startThred + "-" + endThread, true);
