@@ -20,6 +20,8 @@ public class LoginService extends Service<BooleanProperty> {
 
 	private DoubleProperty quotaProgress = new SimpleDoubleProperty(1.0);
 
+	private StringProperty status = new SimpleStringProperty("正在登录……");
+
 	public String getUsername() {
 		return username.get();
 	}
@@ -68,6 +70,18 @@ public class LoginService extends Service<BooleanProperty> {
 		this.quotaProgress.set(quotaProgress);
 	}
 
+	public String getStatus() {
+		return status.get();
+	}
+
+	public StringProperty statusProperty() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status.set(status);
+	}
+
 	@Override
 	protected Task<BooleanProperty> createTask() {
 		return new Task<BooleanProperty>() {
@@ -81,11 +95,15 @@ public class LoginService extends Service<BooleanProperty> {
 
 	@Override
 	protected void failed() {
-		MessageDialog.show("网盘信息获取失败，请稍后重试！", this.getException());
+		super.failed();
+		this.setStatus("登录信息已过期，请重新登录！");
+		MessageDialog.show("登录信息已过期，请重新登录！", this.getException());
 	}
 
 	@Override
 	protected void succeeded() {
+		super.succeeded();
+		this.setStatus("正在获取网盘信息……");
 		this.setUsername(RequestProxy.YUN_DATA.getStr(Constant.NAME_KEY));
 		this.setAvatar(new Image(RequestProxy.YUN_DATA.getStr(Constant.AVATAR_KEY)));
 

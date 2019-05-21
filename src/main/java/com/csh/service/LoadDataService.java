@@ -4,6 +4,8 @@ import cn.hutool.core.util.ObjectUtil;
 import com.csh.coustom.dialog.MessageDialog;
 import com.csh.http.RequestProxy;
 import com.csh.model.BaiduFile;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
@@ -12,6 +14,20 @@ import javafx.concurrent.Task;
 public class LoadDataService extends Service<ObservableList<BaiduFile>> {
 
 	private Query query;
+
+	private StringProperty status = new SimpleStringProperty("正在获取文件列表……");
+
+	public String getStatus() {
+		return status.get();
+	}
+
+	public StringProperty statusProperty() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status.set(status);
+	}
 
 	public class Query {
 
@@ -89,7 +105,21 @@ public class LoadDataService extends Service<ObservableList<BaiduFile>> {
 
 	@Override
 	protected void failed() {
-		MessageDialog.show("文件列表获取失败，请稍后重试！", getException());
+		super.failed();
+		this.setStatus("文件列表获取失败，请稍后重试！");
+		MessageDialog.show(this.getStatus(), this.getException());
+	}
+
+	@Override
+	protected void running() {
+		super.running();
+		this.setStatus("正在获取文件列表……");
+	}
+
+	@Override
+	protected void succeeded() {
+		super.succeeded();
+		this.setStatus("加载完成，共" + this.getValue().size() + "项");
 	}
 
 	public void load(Query query) {

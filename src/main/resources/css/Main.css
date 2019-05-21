@@ -172,9 +172,33 @@
 
 .nav-memu {
 	-fx-padding: 8px 0;
-	-fx-background-color: #f9fafb;
 	-fx-border-width: 0 1 0 0;
 	-fx-border-color: #d6d8dd;
+	-fx-background-color: #f9fafb;
+}
+
+.nav-memu .cell {
+	-fx-cursor: hand;
+	-fx-pref-height: 33;
+	-fx-padding: 0 0 0 35;
+	-fx-border-width: 0 0 0 3px;
+	-fx-border-color: transparent;
+	-fx-background-color: transparent;
+}
+
+.nav-memu .cell .label {
+	-fx-text-fill: inherit;
+}
+
+.nav-memu .cell:selected {
+	-fx-text-fill: #06a8ff;
+	-fx-border-color: #06a8ff;
+	-fx-background-color: #e0f2fb;
+}
+
+.nav-memu .cell:hover {
+	-fx-text-fill: #06a8ff;
+	-fx-background-color: #edf6fb;
 }
 
 .nav-memu .toggle-button {

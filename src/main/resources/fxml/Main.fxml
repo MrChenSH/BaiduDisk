@@ -315,10 +315,7 @@
 			</center>
 		</BorderPane>
 	</top>
-	<left>
-		<VBox fx:id="categroy" prefWidth="165.0" styleClass="nav-memu" BorderPane.alignment="CENTER" />
-	</left>
-   <right>
-      <ListView fx:id="menu" prefWidth="165" BorderPane.alignment="CENTER" />
-   </right>
+   <left>
+      <ListView fx:id="categroyMenu" prefWidth="165" styleClass="nav-memu" BorderPane.alignment="CENTER" />
+   </left>
 </BorderPane>

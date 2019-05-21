@@ -35,7 +35,6 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -71,10 +70,7 @@ public class MainController extends BorderPane implements Initializable {
 	private static final Logger logger = Logger.getLogger(MainController.class);
 
 	@FXML
-	private VBox categroy;
-
-	@FXML
-	private ListView<Categroy> menu;
+	private ListView<Categroy> categroyMenu;
 
 	@FXML
 	private ImageView userImage;
@@ -199,10 +195,6 @@ public class MainController extends BorderPane implements Initializable {
 
 	private Property<Number> transferNameLabelMaxWidth = new SimpleDoubleProperty();
 
-	private ToggleGroup categoryGroup = new ToggleGroup();
-
-	private List<ToggleButton> menus = new ArrayList<>();
-
 	private LoginService loginService = new LoginService();
 
 	private LoadDataService loadDataService = new LoadDataService();
@@ -211,77 +203,61 @@ public class MainController extends BorderPane implements Initializable {
 	 * 初始化类目菜单
 	 */
 	public void initMenu() {
-		Constant.CATEGORY.forEach(item -> {
-			JSONObject obj = (JSONObject) item;
-
-			Icon icon = new Icon();
-			icon.getStyleClass().add("el-icon");
-			ToggleButton toggleButton = new ToggleButton(obj.getStr("text"));
-
-			toggleButton.setGraphic(icon);
-			toggleButton.setToggleGroup(categoryGroup);
-
-			if (obj.containsKey("icon")) {
-				icon.setIcon(FontIcon.valueOf(FontIcon.class, obj.getStr("icon")));
-			}
-
-			menus.add(toggleButton);
-		});
-
-		menu.getItems().addAll(Constant.CATEGORY.toList(Categroy.class));
-		menu.getSelectionModel().select(1);
-		menu.setCellFactory(list -> new ListCell<Categroy>() {
+		categroyMenu.setCellFactory(list -> new ListCell<Categroy>() {
 			@Override
 			protected void updateItem(Categroy item, boolean empty) {
 				super.updateItem(item, empty);
-				if (item != null) this.setText(item.getText());
+				if (item != null) {
+					Icon icon = new Icon();
+					icon.getStyleClass().add("el-icon");
+
+					if (StrUtil.isNotBlank(item.getIcon())) {
+						icon.setIcon(FontIcon.valueOf(FontIcon.class, item.getIcon()));
+					}
+
+					this.setGraphic(new Label(item.getText(), icon));
+				}
 			}
 		});
 
-		menu.getSelectionModel().selectedItemProperty().addListener(observable -> {
-			logger.info(observable);
+		categroyMenu.getSelectionModel().selectedItemProperty().addListener(observable -> {
+			LoadDataService.Query query = loadDataService.getQuery();
+			Categroy categroy = categroyMenu.getSelectionModel().getSelectedItem();
+
+			if (Constant.SEARCH_URL.equals(query.getUrl())) return;
+
+			query.setPath("/");
+			query.setUrl(categroy.getUrl());
+			query.setText(categroy.getText());
+			query.setCategroy(categroy.getCategory());
+
+			ObservableList<Node> links = breadcrumb.getChildren();
+			links.clear();
+			links.add(homeLink);
+
+			if (categroyMenu.getSelectionModel().getSelectedIndex() != 1) {
+				links.addAll(new Label(" > "), new Label(query.getText()));
+			}
+
+			if (loginService.getValue().get()) loadDataService.load(query);
 		});
 
-		categoryGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
-			if (newValue != null) {
-				int index = menus.indexOf(newValue);
-				JSONObject obj = Constant.CATEGORY.getJSONObject(index);
-				LoadDataService.Query query = loadDataService.getQuery();
-
-				if (Constant.SEARCH_URL.equals(query.getUrl())) return;
-
-				query.setPath("/");
-				query.setUrl(obj.getStr("url"));
-				query.setText(obj.getStr("text"));
-				query.setCategroy(obj.getInt("category"));
-
-				ObservableList<Node> links = breadcrumb.getChildren();
-				links.clear();
-				links.add(homeLink);
-
-				if (index != 1) {
-					links.addAll(new Label(" > "), new Label(query.getText()));
-				}
-
-				if (loginService.getValue().get()) loadDataService.load(query);
-			} else categoryGroup.selectToggle(oldValue);
-		});
-
-		categroy.getChildren().addAll(menus);
-		categoryGroup.selectToggle(menus.get(1));
+		categroyMenu.getItems().addAll(Constant.CATEGORY.toList(Categroy.class));
+		categroyMenu.getSelectionModel().select(1);
 	}
 
 	private void locinCheck() {
-		loginService.start();
-
-		loginService.setOnSucceeded(event -> this.initMenu());
-		loginService.setOnRunning(event -> statusLabel.setText("正在登录……"));
-		loginService.setOnFailed(event -> statusLabel.setText(loginService.getException().getMessage()));
-
+		statusLabel.textProperty().bind(loginService.statusProperty());
 		userImage.imageProperty().bind(loginService.avatarProperty());
 		userLabel.textProperty().bind(loginService.usernameProperty());
 		quotaText.textProperty().bind(loginService.quotaTextProperty());
 		quotaBar.progressProperty().bind(loginService.quotaProgressProperty());
+
+		loginService.start();
+		loginService.setOnSucceeded(event -> {
+			this.initMenu();
+			statusLabel.textProperty().bind(loadDataService.statusProperty());
+		});
 	}
 
 
@@ -296,9 +272,7 @@ public class MainController extends BorderPane implements Initializable {
 		placeholder.textProperty().bind(statusLabel.textProperty());
 		placeholder.visibleProperty().bind(loadDataService.runningProperty());
 
-		loadDataService.setOnRunning(event -> statusLabel.setText("正在获取文件列表……"));
-		loadDataService.setOnFailed(event -> statusLabel.setText(loadDataService.getException().getMessage()));
-		loadDataService.setOnSucceeded(event -> statusLabel.setText("加载完成，共" + loadDataService.getValue().size() + "项"));
+
 
 		fileTable.setPlaceholder(placeholder);
 		fileTable.itemsProperty().bind(loadDataService.valueProperty());
@@ -756,7 +730,7 @@ public class MainController extends BorderPane implements Initializable {
 			query.setPath(link.getPath());
 			loadDataService.load(query);
 
-			if (source.equals(homeLink)) categoryGroup.selectToggle(menus.get(1));
+			if (source.equals(homeLink)) categroyMenu.getSelectionModel().select(1);
 		} else {
 			BaiduFile item = fileTable.getSelectionModel().getSelectedItem();
 			if (item != null) {
@@ -810,7 +784,7 @@ public class MainController extends BorderPane implements Initializable {
 			query.setUrl(Constant.SEARCH_URL);
 
 			loadDataService.load(query);
-			categoryGroup.selectToggle(menus.get(1));
+			categroyMenu.getSelectionModel().select(1);
 		}
 	}
 
