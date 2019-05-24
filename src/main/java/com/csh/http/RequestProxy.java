@@ -177,6 +177,8 @@ public class RequestProxy {
 			put("logid", logId());
 		}};
 
+		params.putAll(query.getExtra());
+
 		switch (query.getUrl()) {
 			case Constant.LIST_URL:
 				params.put("dir", ObjectUtil.defaultIfNull(query.getPath(), "/"));
@@ -237,7 +239,7 @@ public class RequestProxy {
 			put("filelist", fileList.toString());
 		}};
 
-		try (HttpResponse rs = httpPost(Constant.MANAGER_URL + HttpUtil.toParams(params), formData)) {
+		try (HttpResponse rs = httpPost(Constant.MANAGER_URL + "?" + HttpUtil.toParams(params), formData)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 
 			logger.info(result.toStringPretty());
@@ -278,7 +280,7 @@ public class RequestProxy {
 			if (isPrivate) put("pwd", RandomUtil.randomString(4));
 		}};
 
-		try (HttpResponse rs = httpPost(Constant.SHARE_URL + HttpUtil.toParams(params), formData)) {
+		try (HttpResponse rs = httpPost(Constant.SHARE_URL + "?" + HttpUtil.toParams(params), formData)) {
 			JSONObject result = JSONUtil.parseObj(rs.body());
 			result.put("pwd", formData.get("pwd"));
 			logger.info(result.toStringPretty());

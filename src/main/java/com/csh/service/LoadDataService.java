@@ -1,6 +1,7 @@
 package com.csh.service;
 
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.json.JSONObject;
 import com.csh.coustom.dialog.MessageDialog;
 import com.csh.http.RequestProxy;
 import com.csh.model.BaiduFile;
@@ -40,6 +41,11 @@ public class LoadDataService extends Service<ObservableList<BaiduFile>> {
 		private String serach;
 
 		private Integer categroy;
+
+		/**
+		 * 查询额外参数
+		 */
+		private JSONObject extra;
 
 		public String getUrl() {
 			return url;
@@ -81,6 +87,14 @@ public class LoadDataService extends Service<ObservableList<BaiduFile>> {
 			this.categroy = categroy;
 		}
 
+		public JSONObject getExtra() {
+			return ObjectUtil.defaultIfNull(extra, extra = new JSONObject());
+		}
+
+		public void setExtra(JSONObject extra) {
+			this.extra = extra;
+		}
+
 		@Override
 		public String toString() {
 			return "Query{" +
@@ -89,6 +103,7 @@ public class LoadDataService extends Service<ObservableList<BaiduFile>> {
 					", text='" + text + '\'' +
 					", serach='" + serach + '\'' +
 					", categroy=" + categroy +
+					", extra=" + extra +
 					'}';
 		}
 	}

@@ -16,7 +16,7 @@ public class LoginService extends Service<BooleanProperty> {
 
 	private ObjectProperty<Image> avatar = new SimpleObjectProperty<>(new Image("image/logo.png"));
 
-	private StringProperty quotaText = new SimpleStringProperty("0 GB / 0 GB");
+	private StringProperty quotaText = new SimpleStringProperty("0G/0G");
 
 	private DoubleProperty quotaProgress = new SimpleDoubleProperty(1.0);
 
@@ -112,7 +112,6 @@ public class LoginService extends Service<BooleanProperty> {
 		double used = info.getDouble("used");
 		double total = info.getDouble("total");
 		this.quotaProgress.set(used / total);
-		this.quotaText.set(Math.round(used / Constant.M_BYTE_MAX_SIZE) + " GB / " + Math.round(total / Constant.M_BYTE_MAX_SIZE) + " GB");
-
+		this.quotaText.set(Math.round(used / Constant.M_BYTE_MAX_SIZE) + "G/" + Math.round(total / Constant.M_BYTE_MAX_SIZE) + "G");
 	}
 }

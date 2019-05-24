@@ -8,16 +8,14 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.cron.CronUtil;
+import cn.hutool.cron.task.Task;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.csh.app.App;
 import com.csh.coustom.control.Icon;
 import com.csh.coustom.control.IconButton;
 import com.csh.coustom.control.PathLink;
-import com.csh.coustom.dialog.ImageDialog;
-import com.csh.coustom.dialog.MessageDialog;
-import com.csh.coustom.dialog.SaveDialog;
-import com.csh.coustom.dialog.ShareDialog;
+import com.csh.coustom.dialog.*;
 import com.csh.http.DownloadUtil;
 import com.csh.http.RequestProxy;
 import com.csh.model.BaiduFile;
@@ -33,6 +31,7 @@ import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Worker;
@@ -115,6 +114,9 @@ public class MainController extends BorderPane implements Initializable {
 	private Button deleteBtn;
 
 	@FXML
+	private SplitMenuButton offlineDownload;
+
+	@FXML
 	private PathLink backBtn;
 
 	@FXML
@@ -178,9 +180,6 @@ public class MainController extends BorderPane implements Initializable {
 	private CheckBox checkAllBox;
 
 	@FXML
-	private ContextMenu contextMenu;
-
-	@FXML
 	private Label statusLabel;
 
 	@FXML
@@ -188,6 +187,8 @@ public class MainController extends BorderPane implements Initializable {
 
 	@FXML
 	private Button nextBtn;
+
+	private ContextMenu rowContextMenu = new ContextMenu();
 
 	private ProgressIndicator loading = new ProgressIndicator();
 
@@ -199,10 +200,15 @@ public class MainController extends BorderPane implements Initializable {
 
 	private LoadDataService loadDataService = new LoadDataService();
 
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		this.loginCheck();
+	}
+
 	/**
 	 * 初始化类目菜单
 	 */
-	public void initMenu() {
+	private void initMenu() {
 		categroyMenu.setCellFactory(list -> new ListCell<Categroy>() {
 			@Override
 			protected void updateItem(Categroy item, boolean empty) {
@@ -239,31 +245,63 @@ public class MainController extends BorderPane implements Initializable {
 				links.addAll(new Label(" > "), new Label(query.getText()));
 			}
 
-			if (loginService.getValue().get()) loadDataService.load(query);
+			loadDataService.load(query);
 		});
 
 		categroyMenu.getItems().addAll(Constant.CATEGORY.toList(Categroy.class));
 		categroyMenu.getSelectionModel().select(1);
 	}
 
-	private void locinCheck() {
+	private void loginCheck() {
 		statusLabel.textProperty().bind(loginService.statusProperty());
 		userImage.imageProperty().bind(loginService.avatarProperty());
 		userLabel.textProperty().bind(loginService.usernameProperty());
 		quotaText.textProperty().bind(loginService.quotaTextProperty());
 		quotaBar.progressProperty().bind(loginService.quotaProgressProperty());
 
-		loginService.start();
+		loginService.setOnFailed(event -> this.showLoginView());
 		loginService.setOnSucceeded(event -> {
+//			this.panTask();
+			this.init();
 			this.initMenu();
 			statusLabel.textProperty().bind(loadDataService.statusProperty());
 		});
+
+		loginService.start();
 	}
 
+	/**
+	 * 初始化行右键菜单
+	 */
+	private void initRowContextMenu() {
+		MenuItem open = new MenuItem("打开");
+		open.setOnAction(event -> this.onClickToOpenFile(event));
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
-		this.locinCheck();
+		MenuItem download = new MenuItem("下载", new Icon(FontIcon.EL_DOWNLOAD, "el-icon"));
+		download.setOnAction(event -> this.onClickToDownload());
+
+		MenuItem share = new MenuItem("分享", new Icon(FontIcon.EL_SHARE, "el-icon"));
+		share.setOnAction(event -> this.onClickToShare());
+
+		MenuItem delete = new MenuItem("删除", new Icon(FontIcon.EL_DELETE, "el-icon"));
+		delete.setOnAction(event -> this.onClickToDelete());
+
+		MenuItem copy = new MenuItem("复制");
+		MenuItem cut = new MenuItem("剪切");
+
+		MenuItem removeTo = new MenuItem("移动到…");
+		removeTo.setOnAction(event -> this.onClickToRemoveTo());
+
+		MenuItem rename = new MenuItem("重命名");
+		rename.setOnAction(event -> this.onClickToRename());
+
+		MenuItem detail = new MenuItem("属性");
+
+		rowContextMenu.getItems().addAll(open, new SeparatorMenuItem(), download, share,
+				new SeparatorMenuItem(), copy, cut, removeTo, new SeparatorMenuItem(), delete, rename, detail);
+	}
+
+	private void init() {
 
 		loading.setPadding(new Insets(5));
 		loading.progressProperty().bind(loadDataService.progressProperty());
@@ -271,8 +309,6 @@ public class MainController extends BorderPane implements Initializable {
 		placeholder.setContentDisplay(ContentDisplay.TOP);
 		placeholder.textProperty().bind(statusLabel.textProperty());
 		placeholder.visibleProperty().bind(loadDataService.runningProperty());
-
-
 
 		fileTable.setPlaceholder(placeholder);
 		fileTable.itemsProperty().bind(loadDataService.valueProperty());
@@ -287,7 +323,7 @@ public class MainController extends BorderPane implements Initializable {
 		checkBoxColumn.setCellFactory(colums -> new TableCell<BaiduFile, Boolean>() {
 			@Override
 			protected void updateItem(Boolean checked, boolean empty) {
-				super.updateItem(checked, empty);
+//				super.updateItem(checked, empty);
 				if (empty) this.setGraphic(null);
 				else {
 					BaiduFile item = (BaiduFile) this.getTableRow().getItem();
@@ -302,7 +338,7 @@ public class MainController extends BorderPane implements Initializable {
 						checkAllBox.setSelected(checkeds == items.size());
 						checkAllBox.setIndeterminate(checkeds > 0 && checkeds < items.size());
 
-						if (checkBox.isSelected()) {
+						if (checked) {
 							fileTable.getSelectionModel().select(items.indexOf(item));
 						} else {
 							fileTable.getSelectionModel().clearSelection(items.indexOf(item));
@@ -317,55 +353,70 @@ public class MainController extends BorderPane implements Initializable {
 		fileNameColumn.setCellValueFactory(new PropertyValueFactory<>("fileName"));
 		fileNameColumn.setCellFactory(column -> new TableCell<BaiduFile, String>() {
 					@Override
+					public void startEdit() {
+						BaiduFile item = (BaiduFile) this.getTableRow().getItem();
+
+						if (item != null) {
+							BorderPane pane = (BorderPane) this.getGraphic();
+							TextField editor = new TextField(item.getFileName());
+							pane.setCenter(editor);
+							editor.setStyle("-fx-font-size: 12px");
+							editor.setOnAction(event -> this.commitEdit(editor.getText()));
+
+							if (item.getIsDir()) editor.selectAll();
+							else editor.selectRange(0, item.getFileName().lastIndexOf('.'));
+
+							editor.focusedProperty().addListener((observable, oldValue, newValue) -> {
+								if (oldValue) this.cancelEdit();
+							});
+
+							editor.requestFocus();
+						}
+					}
+
+					@Override
+					public void cancelEdit() {
+						fileTable.setEditable(false);
+						this.updateItem(this.getItem(), false);
+					}
+
+					@Override
+					public void commitEdit(String newValue) {
+						fileTable.setEditable(false);
+
+						BaiduFile item = (BaiduFile) this.getTableRow().getItem();
+
+						if (item != null) {
+							JSONArray fileList = new JSONArray();
+							fileList.add(new JSONObject() {{
+								put("path", item.getPath());
+								put("newname", newValue);
+							}});
+							boolean success = RequestProxy.manager(Constant.Operate.RENAME, fileList);
+							if (success) super.commitEdit(newValue);
+						}
+					}
+
+					@Override
 					protected void updateItem(String name, boolean empty) {
 						super.updateItem(name, empty);
 						if (empty) this.setGraphic(null);
 						else {
 							BaiduFile item = (BaiduFile) this.getTableRow().getItem();
 							if (item != null) {
-								if (fileTable.isEditable()) {
-									fileTable.setEditable(false);
-
-									BorderPane pane = (BorderPane) this.getGraphic();
-									Node center = pane.getCenter();
-
-									TextField editor = new TextField(name);
-									editor.setStyle("-fx-font-size: 12px");
-
-									editor.setOnAction(event -> {
-										pane.setCenter(center);
-										JSONArray fileList = new JSONArray();
-										fileList.add(new JSONObject() {{
-											put("path", item.getPath());
-											put("newname", editor.getText());
-										}});
-										boolean success = RequestProxy.manager(Constant.Operate.RENAME, fileList);
-										if (success) item.setFileName(editor.getText());
-									});
-
-									editor.focusedProperty().addListener((observable, oldValue, newValue) -> {
-										if (!newValue) pane.setCenter(center);
-									});
-
-									pane.setCenter(editor);
-									editor.requestFocus();
-									if (item.getIsDir()) editor.selectAll();
-									else editor.selectRange(0, name.lastIndexOf('.'));
-								} else {
-									Text text = new Text(name);
-									ImageView imageView = new ImageView(new Image(item.getIcon()));
-									BorderPane pane = new BorderPane(new Text(name));
-									pane.setLeft(imageView);
-									text.getStyleClass().add("file-name-label");
-									text.setOnMouseClicked(event -> {
-										if (MouseButton.PRIMARY.equals(event.getButton())) {
-											onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
-										}
-									});
-									BorderPane.setAlignment(pane.getCenter(), Pos.CENTER_LEFT);
-									this.setGraphic(pane);
-									this.setTooltip(new Tooltip(name));
-								}
+								Text text = new Text(name);
+								ImageView imageView = new ImageView(new Image(item.getIcon()));
+								BorderPane pane = new BorderPane(new Text(name));
+								pane.setLeft(imageView);
+								text.getStyleClass().add("file-name-label");
+								text.setOnMouseClicked(event -> {
+									if (MouseButton.PRIMARY.equals(event.getButton())) {
+										onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
+									}
+								});
+								BorderPane.setAlignment(pane.getCenter(), Pos.CENTER_LEFT);
+								this.setGraphic(pane);
+								this.setTooltip(new Tooltip(name));
 							}
 						}
 					}
@@ -404,20 +455,31 @@ public class MainController extends BorderPane implements Initializable {
 
 		fileTable.setOnMouseClicked(event -> {
 //			logger.info(event);
+//			logger.info(fileTable.getSelectionModel());
 		});
+
+		this.initRowContextMenu();
 
 		fileTable.setRowFactory(tableView -> {
 			TableRow<BaiduFile> row = new TableRow<>();
 
 			row.setOnMouseClicked(event -> {
-				this.checkAll(false);
-				tableView.getSelectionModel().getSelectedItems().forEach(item -> item.setChecked(true));
 				if (!row.isEmpty() && MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
 					this.onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
 				}
 			});
 
+			row.setContextMenu(rowContextMenu);
+
 			return row;
+		});
+
+		fileTable.getSelectionModel().getSelectedItems().addListener((ListChangeListener<? super BaiduFile>) observable -> {
+			List<? extends BaiduFile> selectedItems = fileTable.getSelectionModel().getSelectedItems();
+			selectedItems.forEach(file -> file.setChecked(true));
+			fileTable.getItems().forEach(file -> {
+				if (!selectedItems.contains(file)) file.setChecked(false);
+			});
 		});
 
 		transferList.widthProperty().addListener((observable, oldValue, newValue) -> transferNameLabelMaxWidth.setValue(newValue.doubleValue() - 400));
@@ -669,11 +731,22 @@ public class MainController extends BorderPane implements Initializable {
 				if (success) {
 					fileTable.getItems().removeAll(checkeds);
 					fileTable.getSelectionModel().clearSelection();
-					this.checkAll(false);
 				}
 			});
 		}
 
+	}
+
+	@FXML
+	private void onClickToCreateFolder() {
+		BaiduFile file = new BaiduFile();
+		file.setIsDir(true);
+		file.setChecked(true);
+		file.setFileName("新建文件夹");
+		file.setModifyTime(System.currentTimeMillis() / 1000);
+
+		fileTable.getItems().add(0, file);
+		fileTable.getSelectionModel().clearSelection();
 	}
 
 	@FXML
@@ -711,7 +784,9 @@ public class MainController extends BorderPane implements Initializable {
 	 */
 	@FXML
 	private void onClickToCheckAll() {
-		this.checkAll(checkAllBox.isSelected());
+		if (checkAllBox.isSelected()) {
+			fileTable.getSelectionModel().selectAll();
+		} else fileTable.getSelectionModel().clearSelection();
 	}
 
 	@FXML
@@ -788,6 +863,11 @@ public class MainController extends BorderPane implements Initializable {
 		}
 	}
 
+	private void onClickToRemoveTo() {
+		PathChooserDialog dialog = new PathChooserDialog(fileTable.getSelectionModel().getSelectedItem());
+		dialog.showAndWait();
+	}
+
 	@FXML
 	private void onClickToRename() {
 		fileTable.setEditable(true);
@@ -795,8 +875,8 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	@FXML
-	private void onTableContextMenu(ContextMenuEvent event) {
-		if (event.getY() < 26) contextMenu.hide();
+	private void onClickToOfflineDownload() {
+
 	}
 
 	@FXML
@@ -824,19 +904,6 @@ public class MainController extends BorderPane implements Initializable {
 		return items.filtered(baiduFile -> baiduFile.getChecked());
 	}
 
-	/**
-	 * 全选
-	 *
-	 * @param checked 全选状态，为<code>true</code>时全选，<code>false</code>时取消全选
-	 */
-	private void checkAll(boolean checked) {
-		if (CollUtil.isNotEmpty(this.fileTable.getItems())) {
-			this.checkAllBox.setSelected(checked);
-			this.checkAllBox.setIndeterminate(false);
-			this.fileTable.getItems().forEach(item -> item.setChecked(checked));
-		}
-	}
-
 	private void showLoginView() {
 		WebView loginWiew = new WebView();
 
@@ -862,7 +929,7 @@ public class MainController extends BorderPane implements Initializable {
 						List<String> cookies = manager.get(uri, headers).get("Cookie");
 						// 保存cookie至本地
 						CookieUtil.setCookies(cookies.get(0));
-						this.panTask();
+						this.loginCheck();
 						this.homePane.setCenter(fileTable);
 					} catch (Exception e) {
 						logger.error(e.getMessage(), e);
@@ -879,33 +946,7 @@ public class MainController extends BorderPane implements Initializable {
 	 * 添加一个定时任务，每30分钟刷新一次网盘配额信息和用户信息
 	 */
 	private void panTask() {
-		RequestProxy.getYunData();
-		RequestProxy.getQuotaInfo();
-		CronUtil.schedule("*/30 * * * *", (Runnable) () -> {
-			RequestProxy.getYunData();
-			RequestProxy.getQuotaInfo();
-		});
+		CronUtil.schedule("*/30 * * * *", (Task) () -> Platform.runLater(() -> loginService.restart()));
 		CronUtil.start();
 	}
-
-	/*public class LoginCheckTask extends Task {
-
-		@Override
-		protected void done() {
-			Platform.runLater(() -> {
-				if (CookieUtil.COOKIES.isEmpty()) statusLabel.setText("请登录百度网盘账号");
-				else if (RequestProxy.getYunData().isEmpty()) statusLabel.setText("登录信息已过期，请重新登录……");
-				else panTask();
-
-				if (RequestProxy.YUN_DATA.isEmpty()) showLoginView();
-			});
-			super.done();
-		}
-
-		@Override
-		protected Object call() {
-			return null;
-		}
-	}*/
-
 }

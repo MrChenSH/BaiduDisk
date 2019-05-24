@@ -11,6 +11,7 @@ import javafx.beans.property.*;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -23,6 +24,9 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 
 	@JsonProperty("isdir")
 	private BooleanProperty isDir = new SimpleBooleanProperty();
+
+	@JsonProperty("dir_empty")
+	private BooleanProperty dirEmpty = new SimpleBooleanProperty();
 
 	private IntegerProperty category = new SimpleIntegerProperty();
 
@@ -50,7 +54,7 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 	}
 
 	public void setFileName(String fileName) {
-		if (this.getPath().equals("/apps")) fileName = "我的应用数据";
+		if (Objects.equals(this.getPath(), "/apps")) fileName = "我的应用数据";
 		this.fileName.set(fileName);
 	}
 
@@ -60,6 +64,14 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 
 	public void setIsDir(Boolean isDir) {
 		this.isDir.set(isDir);
+	}
+
+	public boolean isDirEmpty() {
+		return dirEmpty.get();
+	}
+
+	public void setDirEmpty(boolean dirEmpty) {
+		this.dirEmpty.set(dirEmpty);
 	}
 
 	public Integer getCategory() {
@@ -114,6 +126,10 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 		return isDir;
 	}
 
+	public BooleanProperty dirEmptyProperty() {
+		return dirEmpty;
+	}
+
 	public IntegerProperty categoryProperty() {
 		return category;
 	}
@@ -135,8 +151,8 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 	}
 
 	public String getIcon() {
-		if (this.getPath().equals("/apps")) return "image/FileType/Middle/Apps.png";
 		if (this.getIsDir()) return "image/FileType/Middle/FolderType.png";
+		if (Objects.equals(this.getPath(), "/apps")) return "image/FileType/Middle/Apps.png";
 		Set<Map.Entry<String, String>> entries = Constant.ICON_MAP.entrySet();
 		for (Map.Entry<String, String> entry : entries) {
 			if (ReUtil.contains(entry.getKey(), this.getFileName().toLowerCase())) {

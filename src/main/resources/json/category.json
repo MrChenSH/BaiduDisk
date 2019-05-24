@@ -17,16 +17,19 @@
   {
 	"category": 1,
 	"text": "视频",
+	"icon": "EL_CAMERA",
 	"url": "https://pan.baidu.com/api/categorylist"
   },
   {
 	"category": 4,
 	"text": "文档",
+	"icon": "EL_DOCUMENT",
 	"url": "https://pan.baidu.com/api/categorylist"
   },
   {
 	"category": 2,
 	"text": "音乐",
+	"icon": "EL_MUSIC",
 	"url": "https://pan.baidu.com/api/categorylist"
   },
   {
@@ -42,7 +45,7 @@
   },
   {
 	"text": "隐藏空间",
-	"icon": "EL_EYE"
+	"icon": "EL_LOCK"
   },
   {
 	"text": "我的分享",

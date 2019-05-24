@@ -8,7 +8,6 @@
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.CheckMenuItem?>
-<?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.MenuButton?>
@@ -16,6 +15,7 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.SplitMenuButton?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
@@ -27,7 +27,10 @@
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
@@ -39,7 +42,7 @@
 					<content>
 						<BorderPane fx:id="homePane">
 							<center>
-								<TableView fx:id="fileTable" onContextMenuRequested="#onTableContextMenu" styleClass="file-table" BorderPane.alignment="CENTER">
+								<TableView fx:id="fileTable" styleClass="file-table" BorderPane.alignment="CENTER">
 									<columns>
 										<TableColumn fx:id="checkBoxColumn" editable="false" prefWidth="35" resizable="false" sortable="false">
 											<graphic>
@@ -50,22 +53,6 @@
 										<TableColumn fx:id="modifyTimeColumn" minWidth="150.0" prefWidth="150" text="修改时间" />
 										<TableColumn fx:id="fileSizeColumn" minWidth="80.0" prefWidth="80" text="大小" />
 									</columns>
-									<contextMenu>
-										<ContextMenu id="table_content_menu" fx:id="contextMenu">
-											<items>
-												<MenuItem mnemonicParsing="false" onAction="#onClickToDownload" text="下载" />
-												<MenuItem mnemonicParsing="false" onAction="#onClickToOpenFile" text="打开" />
-												<SeparatorMenuItem />
-												<MenuItem mnemonicParsing="false" onAction="#onClickToRename" text="重命名" />
-												<MenuItem mnemonicParsing="false" onAction="#onClickToDelete" text="删除">
-													<graphic>
-														<Icon icon="EL_DELETE" styleClass="el-icon" />
-													</graphic>
-												</MenuItem>
-												<MenuItem mnemonicParsing="false" text="属性" />
-											</items>
-										</ContextMenu>
-									</contextMenu>
 								</TableView>
 							</center>
 							<top>
@@ -104,7 +91,7 @@
 										<HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
 											<children>
 												<Separator maxHeight="-Infinity" orientation="VERTICAL" prefHeight="15.0" prefWidth="15.0" />
-												<TextField id="search_field" fx:id="searchField" onAction="#onClickToSearchFile" promptText="搜索网盘文件" />
+												<TextField id="search_field" fx:id="searchField" onAction="#onClickToSearchFile" promptText="搜索我的网盘文件" />
 												<Button id="search_btn" fx:id="searchBtn" onAction="#onClickToSearchFile" styleClass="nav-btn">
 													<graphic>
 														<Icon icon="EL_SERACH" styleClass="el-icon" />
@@ -144,6 +131,21 @@
 														<Icon icon="EL_DELETE" styleClass="el-icon" />
 													</graphic>
 												</Button>
+												<Button fx:id="newFolderBtn" layoutX="238.0" layoutY="10.0" onAction="#onClickToCreateFolder" text="新建文件夹">
+													<graphic>
+														<Icon icon="EL_FOLDER_ADD" styleClass="el-icon" />
+													</graphic>
+												</Button>
+												<SplitMenuButton fx:id="offlineDownload" mnemonicParsing="false" text="离线下载">
+													<graphic>
+														<Icon icon="EL_DOWNLOAD" styleClass="el-icon" />
+													</graphic>
+													<items>
+														<MenuItem mnemonicParsing="false" text="新建普通下载" onAction="#onClickToOfflineDownload"/>
+														<MenuItem mnemonicParsing="false" text="新建BT任务"/>
+														<MenuItem mnemonicParsing="false" text="查看下载列表"/>
+													</items>
+												</SplitMenuButton>
 												<Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#onClickToLogout" text="退出登录" />
 											</items>
 										</ToolBar>
@@ -277,8 +279,6 @@
 										<Font size="14.0" />
 									</font>
 								</Label>
-								<ProgressBar fx:id="quotaBar" minHeight="13.0" prefHeight="13.0" prefWidth="180.0" progress="1.0" />
-								<Label fx:id="quotaText" text="0GB/0GB" />
 							</children>
 						</VBox>
 					</children>
@@ -315,7 +315,21 @@
 			</center>
 		</BorderPane>
 	</top>
-   <left>
-      <ListView fx:id="categroyMenu" prefWidth="165" styleClass="nav-memu" BorderPane.alignment="CENTER" />
-   </left>
+	<left>
+		<GridPane prefWidth="165.0" styleClass="nav-memu" BorderPane.alignment="CENTER">
+			<columnConstraints>
+				<ColumnConstraints />
+			</columnConstraints>
+			<rowConstraints>
+				<RowConstraints vgrow="ALWAYS" />
+				<RowConstraints valignment="CENTER" vgrow="NEVER" />
+				<RowConstraints valignment="CENTER" vgrow="NEVER" />
+			</rowConstraints>
+			<children>
+				<ListView fx:id="categroyMenu" />
+				<ProgressBar fx:id="quotaBar" progress="0" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+				<Label fx:id="quotaText" text="0G/0G" GridPane.rowIndex="2" />
+			</children>
+		</GridPane>
+	</left>
 </BorderPane>
