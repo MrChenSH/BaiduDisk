@@ -103,7 +103,7 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 	}
 
 	public void setModifyTime(Long modifyTime) {
-		this.modifyTime.set(new DateTime(modifyTime * 1000).toString());
+		if (modifyTime != null) this.modifyTime.set(new DateTime(modifyTime * 1000).toString());
 	}
 
 	public Boolean getChecked() {
@@ -151,8 +151,8 @@ public class BaiduFile extends CloneSupport<BaiduFile> implements Serializable {
 	}
 
 	public String getIcon() {
+		if (this.getPath() != null && this.getPath().startsWith("/apps")) return "image/FileType/Middle/Apps.png";
 		if (this.getIsDir()) return "image/FileType/Middle/FolderType.png";
-		if (Objects.equals(this.getPath(), "/apps")) return "image/FileType/Middle/Apps.png";
 		Set<Map.Entry<String, String>> entries = Constant.ICON_MAP.entrySet();
 		for (Map.Entry<String, String> entry : entries) {
 			if (ReUtil.contains(entry.getKey(), this.getFileName().toLowerCase())) {

@@ -134,7 +134,7 @@ public class LoadDataService extends Service<ObservableList<BaiduFile>> {
 	@Override
 	protected void succeeded() {
 		super.succeeded();
-		this.setStatus("加载完成，共" + this.getValue().size() + "项");
+		this.setStatus("共" + this.getValue().size() + "项");
 	}
 
 	public void load(Query query) {

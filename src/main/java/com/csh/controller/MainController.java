@@ -1,6 +1,5 @@
 package com.csh.controller;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
@@ -36,7 +35,6 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
@@ -46,7 +44,10 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -115,6 +116,9 @@ public class MainController extends BorderPane implements Initializable {
 
 	@FXML
 	private SplitMenuButton offlineDownload;
+
+	@FXML
+	private SplitMenuButton moreMenuBtn;
 
 	@FXML
 	private PathLink backBtn;
@@ -219,6 +223,9 @@ public class MainController extends BorderPane implements Initializable {
 
 					if (StrUtil.isNotBlank(item.getIcon())) {
 						icon.setIcon(FontIcon.valueOf(FontIcon.class, item.getIcon()));
+					} else if (Objects.equals(item.getCategory(), 7)) {
+						icon.setText("BT");
+						icon.setStyle("-fx-font-size: 12px");
 					}
 
 					this.setGraphic(new Label(item.getText(), icon));
@@ -253,6 +260,7 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	private void loginCheck() {
+		statusLabel.setContentDisplay(ContentDisplay.RIGHT);
 		statusLabel.textProperty().bind(loginService.statusProperty());
 		userImage.imageProperty().bind(loginService.avatarProperty());
 		userLabel.textProperty().bind(loginService.usernameProperty());
@@ -302,7 +310,6 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	private void init() {
-
 		loading.setPadding(new Insets(5));
 		loading.progressProperty().bind(loadDataService.progressProperty());
 
@@ -314,6 +321,8 @@ public class MainController extends BorderPane implements Initializable {
 		fileTable.itemsProperty().bind(loadDataService.valueProperty());
 		fileTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
+		loadDataService.setOnReady(event -> fileTable.getSelectionModel().clearSelection());
+
 		tabGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
 			if (newValue == null) tabGroup.selectToggle(oldValue);
 			navigationTabPane.getSelectionModel().select(tabGroup.getToggles().indexOf(tabGroup.getSelectedToggle()));
@@ -323,7 +332,7 @@ public class MainController extends BorderPane implements Initializable {
 		checkBoxColumn.setCellFactory(colums -> new TableCell<BaiduFile, Boolean>() {
 			@Override
 			protected void updateItem(Boolean checked, boolean empty) {
-//				super.updateItem(checked, empty);
+				super.updateItem(checked, empty);
 				if (empty) this.setGraphic(null);
 				else {
 					BaiduFile item = (BaiduFile) this.getTableRow().getItem();
@@ -333,10 +342,6 @@ public class MainController extends BorderPane implements Initializable {
 						checkBox.setFocusTraversable(false);
 						// 属性绑定
 						checkBox.selectedProperty().bindBidirectional(item.checkedProperty());
-
-						int checkeds = getCheckeds().size();
-						checkAllBox.setSelected(checkeds == items.size());
-						checkAllBox.setIndeterminate(checkeds > 0 && checkeds < items.size());
 
 						if (checked) {
 							fileTable.getSelectionModel().select(items.indexOf(item));
@@ -406,7 +411,7 @@ public class MainController extends BorderPane implements Initializable {
 							if (item != null) {
 								Text text = new Text(name);
 								ImageView imageView = new ImageView(new Image(item.getIcon()));
-								BorderPane pane = new BorderPane(new Text(name));
+								BorderPane pane = new BorderPane(text);
 								pane.setLeft(imageView);
 								text.getStyleClass().add("file-name-label");
 								text.setOnMouseClicked(event -> {
@@ -414,7 +419,8 @@ public class MainController extends BorderPane implements Initializable {
 										onClickToOpenFile(new ActionEvent(event.getSource(), event.getTarget()));
 									}
 								});
-								BorderPane.setAlignment(pane.getCenter(), Pos.CENTER_LEFT);
+								BorderPane.setAlignment(text, Pos.CENTER_LEFT);
+								BorderPane.setMargin(imageView, new Insets(0, 5, 0, 0));
 								this.setGraphic(pane);
 								this.setTooltip(new Tooltip(name));
 							}
@@ -475,11 +481,15 @@ public class MainController extends BorderPane implements Initializable {
 		});
 
 		fileTable.getSelectionModel().getSelectedItems().addListener((ListChangeListener<? super BaiduFile>) observable -> {
-			List<? extends BaiduFile> selectedItems = fileTable.getSelectionModel().getSelectedItems();
-			selectedItems.forEach(file -> file.setChecked(true));
-			fileTable.getItems().forEach(file -> {
-				if (!selectedItems.contains(file)) file.setChecked(false);
-			});
+			if (fileTable.getItems() != null) {
+				List<BaiduFile> selectedItems = fileTable.getSelectionModel().getSelectedItems();
+				fileTable.getItems().forEach(file -> file.setChecked(selectedItems.contains(file)));
+
+				int checkeds = selectedItems.size();
+				checkAllBox.setSelected(checkeds == fileTable.getItems().size());
+				checkAllBox.setIndeterminate(checkeds > 0 && checkeds < fileTable.getItems().size());
+				statusLabel.setGraphic(checkeds == 0 ? null : new Text("，选中" + selectedItems.size() + "项"));
+			}
 		});
 
 		transferList.widthProperty().addListener((observable, oldValue, newValue) -> transferNameLabelMaxWidth.setValue(newValue.doubleValue() - 400));
@@ -607,7 +617,6 @@ public class MainController extends BorderPane implements Initializable {
 			MessageDialog.show("请至少选择一个文件！");
 		} else {
 			SaveDialog dialog = new SaveDialog();
-			dialog.setFilePath("G:\\Download");
 			dialog.show();
 			dialog.setOnCloseRequest(event -> {
 				if (ButtonBar.ButtonData.OK_DONE.equals(dialog.getResult().getButtonData())) {
@@ -738,15 +747,16 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	@FXML
-	private void onClickToCreateFolder() {
+	private void onClickToCreateFolder() throws InterruptedException {
 		BaiduFile file = new BaiduFile();
 		file.setIsDir(true);
-		file.setChecked(true);
 		file.setFileName("新建文件夹");
 		file.setModifyTime(System.currentTimeMillis() / 1000);
 
+		fileTable.scrollTo(0);
 		fileTable.getItems().add(0, file);
-		fileTable.getSelectionModel().clearSelection();
+		fileTable.getSelectionModel().clearAndSelect(0);
+//		this.onClickToRename();
 	}
 
 	@FXML
@@ -770,6 +780,11 @@ public class MainController extends BorderPane implements Initializable {
 			// 打开登录对话框
 			this.showLoginView();
 		});
+	}
+
+	@FXML
+	private void onClickToShowFloatingDialog() {
+		FloatingDialog.setVisible(!FloatingDialog.getInstance().isShowing());
 	}
 
 	@FXML
@@ -863,9 +878,22 @@ public class MainController extends BorderPane implements Initializable {
 		}
 	}
 
+	@FXML
 	private void onClickToRemoveTo() {
-		PathChooserDialog dialog = new PathChooserDialog(fileTable.getSelectionModel().getSelectedItem());
-		dialog.showAndWait();
+		List<BaiduFile> checkeds = this.getCheckeds();
+
+		if (CollectionUtil.isEmpty(checkeds)) {
+			MessageDialog.show("请至少选择一个文件！");
+			return;
+		}
+
+		PathChooserDialog dialog = new PathChooserDialog();
+		dialog.showAndWait().ifPresent(buttonType -> {
+			if (ButtonType.OK.equals(buttonType)) {
+				BaiduFile selected = dialog.getSelected();
+				logger.info(selected);
+			}
+		});
 	}
 
 	@FXML
@@ -876,7 +904,20 @@ public class MainController extends BorderPane implements Initializable {
 
 	@FXML
 	private void onClickToOfflineDownload() {
+		NewDownloadDialog dialog = new NewDownloadDialog();
+		dialog.showAndWait().ifPresent(o -> {
+			logger.info(o);
+		});
+	}
 
+	@FXML
+	private void onClickOpenTorrent() {
+		FileChooser chooser = new FileChooser();
+		chooser.setTitle("打开种子文件");
+		chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("BT种子文件", "*.torrent"));
+		File file = chooser.showOpenDialog(App.primaryStage);
+
+		logger.info(file);
 	}
 
 	@FXML
@@ -889,8 +930,8 @@ public class MainController extends BorderPane implements Initializable {
 	}
 
 	@FXML
-	private void onClick(Event event) {
-		logger.info(event);
+	private void onClickToShowMoreMenu() {
+		moreMenuBtn.show();
 	}
 
 	/**

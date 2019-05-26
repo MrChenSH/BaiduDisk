@@ -1,0 +1,145 @@
+.root, .alert, .content, .header-panel {
+	-fx-background-color: transparent;
+}
+
+.tooltip {
+	-fx-padding: 3 5;
+	-fx-font-size: 12px;
+	-fx-text-fill: #575757;
+	-fx-border-color: #767676;
+	-fx-background-radius: 0;
+	-fx-background-color: white;
+}
+
+.scroll-bar {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar .track {
+	-fx-background-insets: 2;
+	-fx-background-radius: 10;
+	-fx-background-color: #f0f0f0;
+}
+
+.scroll-bar .thumb {
+	-fx-background-radius: 10;
+	-fx-background-color: #cfd1d3;
+}
+
+.scroll-bar .thumb:hover {
+	-fx-background-color: #a7acb1;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+	-fx-background-color: #b7bcc0;
+}
+
+.scroll-bar .increment-arrow:hover,
+.scroll-bar .decrement-arrow:hover {
+	-fx-background-color: #939aa0;
+}
+
+.dialog-pane {
+	-fx-padding: 10 10 0 10;
+}
+
+.dialog-pane.alert {
+	-fx-padding: 0;
+}
+
+.dialog-pane.alert .container {
+	-fx-padding: -20 10 10 10;
+}
+
+.dialog-pane.floating {
+	-fx-padding: 0;
+}
+
+.dialog-pane.floating .box {
+	-fx-border-radius: 3;
+	/*-fx-max-height: 20;*/
+	-fx-border-color: #0c92ff;
+}
+
+.dialog-pane.floating .icon {
+	/*-fx-pref-width: 29;-fx-max-height: 20;*/
+	-fx-background-color: #21a4fe;
+	-fx-background-repeat: no-repeat;
+	-fx-background-image: url(/image/floating.png);
+	-fx-background-position: center center;
+}
+
+.dialog-pane.floating .status {
+	-fx-alignment: center;
+	/*-fx-max-height: 20;*/
+	-fx-text-fill: #47b8ff;
+	-fx-background-color: #d2f1fe;
+}
+
+.button {
+	-fx-border-radius: 1;
+	-fx-border-color: #cfcfcf;
+	-fx-background-color: #f7f7f7;
+}
+
+.button:hover,
+.button:focused {
+	-fx-border-color: #98d9fd;
+	-fx-background-color: #edf6fb;
+}
+
+.tree-view {
+	-fx-padding: 0;
+	-fx-border-color: #e6e6e6;
+	-fx-background-color: transparent;
+}
+
+.tree-view .tree-cell:selected {
+	-fx-background-color: #f1f3f7;
+}
+
+.tree-view .tree-cell:selected .label {
+	-fx-text-fill: #323232;
+}
+
+.tree-view .tree-cell:selected .arrow {
+	-fx-background-color: #333333;
+}
+
+.save-box .path-input {
+	-fx-max-width: 360;
+	-fx-border-color: #b5c6db;
+	-fx-background-color: transparent;
+}
+
+.save-box .capacity {
+	-fx-padding: 10 0 10 45;
+}
+
+.save-box .capacity .check-box {
+}
+
+.download-box {
+	-fx-border-color: #e6e6e6;
+}
+
+.download-box .link-label {
+	-fx-padding: 0 0 10 0;
+	-fx-text-fill: #3c6889;
+}
+
+.download-box .link-input {
+	-fx-pref-height: 35;
+	-fx-border-color: #b5c6db;
+	-fx-background-color: transparent;
+}
+
+.download-box .link-input.error {
+	-fx-border-color: red;
+}

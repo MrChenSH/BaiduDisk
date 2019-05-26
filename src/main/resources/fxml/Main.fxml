@@ -7,7 +7,6 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.MenuButton?>
@@ -33,8 +32,9 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 
-<BorderPane prefHeight="600.0" prefWidth="900.0" stylesheets="@/css/Main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.csh.controller.MainController">
+<BorderPane prefHeight="600.0" prefWidth="1000.0" stylesheets="@/css/Main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.csh.controller.MainController">
 	<center>
 		<TabPane id="navigation_tab_pane" fx:id="navigationTabPane" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
 			<tabs>
@@ -72,7 +72,7 @@
 												</PathLink>
 												<MenuButton mnemonicParsing="false">
 													<items>
-														<CheckMenuItem selected="true" text="我的网盘" />
+														<MenuItem mnemonicParsing="false" text="我的网盘" />
 														<SeparatorMenuItem />
 														<MenuItem mnemonicParsing="false" text="Action 1" />
 														<MenuItem mnemonicParsing="false" text="Action 2" />
@@ -136,17 +136,48 @@
 														<Icon icon="EL_FOLDER_ADD" styleClass="el-icon" />
 													</graphic>
 												</Button>
-												<SplitMenuButton fx:id="offlineDownload" mnemonicParsing="false" text="离线下载">
+												<SplitMenuButton fx:id="offlineDownload" mnemonicParsing="false" onAction="#onClickToOfflineDownload" text="离线下载">
 													<graphic>
 														<Icon icon="EL_DOWNLOAD" styleClass="el-icon" />
 													</graphic>
 													<items>
-														<MenuItem mnemonicParsing="false" text="新建普通下载" onAction="#onClickToOfflineDownload"/>
-														<MenuItem mnemonicParsing="false" text="新建BT任务"/>
-														<MenuItem mnemonicParsing="false" text="查看下载列表"/>
+														<MenuItem mnemonicParsing="false" onAction="#onClickToOfflineDownload" text="新建普通下载">
+														<graphic>
+															<Icon icon="EL_DOWNLOAD" styleClass="el-icon" />
+														</graphic>
+														</MenuItem>
+														<MenuItem mnemonicParsing="false" onAction="#onClickOpenTorrent" text="新建BT任务">
+															<graphic>
+																<Text text="BT" />
+															</graphic>
+														</MenuItem>
+														<MenuItem mnemonicParsing="false" text="查看下载列表">
+															<graphic>
+																<Icon icon="EL_SORT" styleClass="el-icon" />
+															</graphic>
+														</MenuItem>
+													</items>
+												</SplitMenuButton>
+												<SplitMenuButton fx:id="moreMenuBtn" mnemonicParsing="false" onAction="#onClickToShowMoreMenu" text="更多">
+													<graphic>
+														<Icon icon="EL_MORE" styleClass="el-icon" />
+													</graphic>
+													<items>
+														<MenuItem mnemonicParsing="false" onAction="#onClickToRemoveTo" text="移动到…" />
+														<MenuItem mnemonicParsing="false" text="移动到隐藏空间">
+															<graphic>
+																<Icon icon="EL_LOCK" styleClass="el-icon" />
+															</graphic>
+														</MenuItem>
+														<MenuItem disable="true" mnemonicParsing="false" text="文档历史版本">
+															<graphic>
+																<Icon icon="EL_TIME" styleClass="el-icon" />
+															</graphic>
+														</MenuItem>
 													</items>
 												</SplitMenuButton>
 												<Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#onClickToLogout" text="退出登录" />
+												<Button mnemonicParsing="false" text="显示悬浮窗" onAction="#onClickToShowFloatingDialog" />
 											</items>
 										</ToolBar>
 									</top>
@@ -155,7 +186,7 @@
 							<bottom>
 								<ToolBar styleClass="status-bar" BorderPane.alignment="CENTER">
 									<items>
-										<Label fx:id="statusLabel" />
+										<Label fx:id="statusLabel" styleClass="status-label" />
 										<Button fx:id="prevBtn" onAction="#onClickToPagination" styleClass="button-link" />
 										<Button fx:id="nextBtn" onAction="#onClickToPagination" styleClass="button-link" />
 									</items>

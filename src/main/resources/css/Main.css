@@ -9,6 +9,40 @@
 	-fx-font-family: FontAwesome;
 }
 
+.scroll-bar {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar .track {
+	-fx-background-insets: 2;
+	-fx-background-radius: 10;
+	-fx-background-color: #f0f0f0;
+}
+
+.scroll-bar .thumb {
+	-fx-background-radius: 10;
+	-fx-background-color: #cfd1d3;
+}
+
+.scroll-bar .thumb:hover {
+	-fx-background-color: #a7acb1;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+	-fx-background-color: #b7bcc0;
+}
+
+.scroll-bar .increment-arrow:hover,
+.scroll-bar .decrement-arrow:hover {
+	-fx-background-color: #939aa0;
+}
+
 .el-icon {
 	-fx-padding: -2 0 0 0;
 	-fx-text-fill: inherit;
@@ -277,9 +311,13 @@
 }
 
 .file-table-tbar .menu-button {
-	-fx-background-color: transparent;
 	-fx-min-width: 25px;
 	-fx-pref-width: 25px;
+	-fx-background-color: transparent;
+}
+
+.file-table-tbar .menu-button .arrow:hover {
+	-fx-background-color: #06a8ff;
 }
 
 .file-table-tbar .el-icon {
@@ -288,6 +326,10 @@
 
 .status-bar {
 	-fx-background-color: transparent;
+}
+
+.status-bar .status-label {
+	-fx-padding: 0 0 0 5;
 }
 
 #navigation_tab_pane > .tab-header-area {
@@ -401,18 +443,16 @@
 	-fx-background-color: transparent;
 }
 
-.file-table .table-row-cell .file-name-label:hover {
-	-fx-cursor: hand;
-	-fx-fill: #5ea8ff !important;
+.file-table .table-row-cell .cell {
+	-fx-text-fill: #666666;
 }
 
+.file-table .table-row-cell .file-name-label:hover {
+	-fx-cursor: hand;
+	-fx-fill: #06a8ff;
+}
 
 .file-table .table-row-cell:hover,
 .file-table .table-row-cell:selected {
 	-fx-background-color: #e6f6ff;
-}
-
-.file-table .table-row-cell:selected .cell,
-.file-table .table-row-cell:selected .file-name-label {
-	-fx-text-fill: #323232;
 }

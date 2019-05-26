@@ -1,12 +1,13 @@
 package com.csh.coustom.dialog;
 
+import cn.hutool.core.io.FileUtil;
 import com.csh.app.App;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 
 import java.io.File;
@@ -15,6 +16,8 @@ import java.io.File;
  * 保存文件对话框
  */
 public class SaveDialog extends Dialog<ButtonType> {
+
+	private DialogPane dialogPane = this.getDialogPane();
 
 	private StringProperty filePath = new SimpleStringProperty();
 
@@ -35,41 +38,50 @@ public class SaveDialog extends Dialog<ButtonType> {
 
 		TextField input = new TextField();
 		input.setEditable(false);
-		input.setMaxWidth(280);
 		input.setPromptText("请选择保存路径");
+		input.getStyleClass().add("path-input");
 		input.textProperty().bindBidirectional(filePath);
 
 		Button button = new Button("浏览");
 		button.setPrefWidth(75);
-		button.setOnAction(event -> {
-			DirectoryChooser chooser = new DirectoryChooser();
-			if (filePath.isNotEmpty().get())
-				chooser.setInitialDirectory(new File(filePath.getValue()));
-			File file = chooser.showDialog(App.primaryStage);
-			if (file != null) this.setFilePath(file.getAbsolutePath());
-		});
+
+
+		Label capacity = new Label("磁盘剩余空间");
+		capacity.setAlignment(Pos.CENTER_LEFT);
+		capacity.getStyleClass().add("capacity");
 
 		CheckBox checkBox = new CheckBox("设置为默认下载路径");
-		checkBox.setPrefHeight(30);
+
+		button.setOnAction(event -> {
+			DirectoryChooser chooser = new DirectoryChooser();
+			File file = chooser.showDialog(App.primaryStage);
+			if (file != null) {
+				this.setFilePath(file.getAbsolutePath());
+				capacity.setText("磁盘剩余空间：" + FileUtil.readableFileSize(file.getFreeSpace()));
+			}
+		});
+
+		VBox box = new VBox(capacity, checkBox);
 
 		BorderPane content = new BorderPane();
 		content.setLeft(label);
 		content.setCenter(input);
 		content.setRight(button);
-		content.setBottom(checkBox);
-		content.setStyle("-fx-border-color: #cfcfcf;-fx-border-width: 0 0 1 0;-fx-padding: 20 10 0 10");
-		BorderPane.setAlignment(label, Pos.CENTER);
+		content.setBottom(box);
+		content.getStyleClass().add("save-box");
 
-		this.setTitle("设置保存路径");
+		BorderPane.setAlignment(label, Pos.CENTER);
+		BorderPane.setAlignment(capacity, Pos.CENTER_LEFT);
+
+		this.setTitle("设置下载保存路径");
 		this.initOwner(App.primaryStage);
 		this.setOnCloseRequest(event -> {
 			System.out.println(event);
 		});
 
-		DialogPane dialogPane = this.getDialogPane();
-		dialogPane.setPrefWidth(435);
+		dialogPane.setPrefWidth(525);
 		dialogPane.setContent(content);
-		dialogPane.setBackground(Background.EMPTY);
+		dialogPane.getStylesheets().add("css/dialog.css");
 		dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 	}
 }

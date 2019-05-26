@@ -39,7 +39,7 @@ public class MessageDialog {
 		}
 
 		final DialogPane dialogPane = dialog.getDialogPane();
-		dialogPane.setBackground(Background.EMPTY);
+		dialogPane.getStylesheets().add("css/dialog.css");
 		dialogPane.setExpandableContent(new BorderPane(textArea));
 		return dialog.showAndWait();
 	}
@@ -54,7 +54,7 @@ public class MessageDialog {
 		dialog.setTitle("系统提示");
 		dialog.setHeaderText(message);
 		dialog.initOwner(App.primaryStage);
-		dialog.getDialogPane().setBackground(Background.EMPTY);
+		dialog.getDialogPane().getStylesheets().add("css/dialog.css");
 		return dialog.showAndWait();
 	}
 }

@@ -3,6 +3,8 @@ package com.csh.utils;
 public enum FontIcon {
 
 	EL_TIME("\ue71f"),
+	EL_MORE("\ue794"),
+	EL_SORT("\ue6d2"),
 	EL_LOCK("\ue6e5"),
 	EL_LIST("\ue78b"),
 	EL_PICTURE("\ue79f"),

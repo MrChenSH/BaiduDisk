@@ -19,6 +19,8 @@ public class ShareDialog extends Dialog<ButtonType> {
 
 	private GridPane sharePane = new GridPane();
 
+	private DialogPane dialogPane = this.getDialogPane();
+
 	/**
 	 * 过期时间属性
 	 */
@@ -41,11 +43,13 @@ public class ShareDialog extends Dialog<ButtonType> {
 		sharePane.setPrefWidth(400);
 		sharePane.setPrefHeight(160);
 		sharePane.getColumnConstraints().clear();
-		createSharePane();
+
+		this.createSharePane();
 		this.setTitle("分享文件");
 		this.initOwner(App.primaryStage);
-		this.getDialogPane().setContent(sharePane);
-		this.getDialogPane().setBackground(Background.EMPTY);
+
+		dialogPane.setContent(sharePane);
+		dialogPane.getStylesheets().add("css/dialog.css");
 	}
 
 	/**
@@ -89,8 +93,8 @@ public class ShareDialog extends Dialog<ButtonType> {
 
 		children.addAll(label_1, link, label_2);
 
-		this.getDialogPane().getButtonTypes().clear();
-		this.getDialogPane().getButtonTypes().addAll(new ButtonType("复制链接" + (isPrivate() ? "及密码" : ""), ButtonBar.ButtonData.OK_DONE),
+		dialogPane.getButtonTypes().clear();
+		dialogPane.getButtonTypes().addAll(new ButtonType("复制链接" + (isPrivate() ? "及密码" : ""), ButtonBar.ButtonData.OK_DONE),
 				new ButtonType("关闭", ButtonBar.ButtonData.CANCEL_CLOSE));
 	}
 
@@ -153,7 +157,7 @@ public class ShareDialog extends Dialog<ButtonType> {
 
 		children.addAll(label_1, privateBtn, publicBtn, label_4, box);
 
-		this.getDialogPane().getButtonTypes().addAll(new ButtonType("创建链接", ButtonBar.ButtonData.OK_DONE), ButtonType.CANCEL);
+		dialogPane.getButtonTypes().addAll(new ButtonType("创建链接", ButtonBar.ButtonData.OK_DONE), ButtonType.CANCEL);
 	}
 
 	private class Period {

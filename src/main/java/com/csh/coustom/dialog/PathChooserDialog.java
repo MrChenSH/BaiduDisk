@@ -9,30 +9,34 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
+
+import java.util.Objects;
 
 public class PathChooserDialog extends Dialog<ButtonType> {
 
 	private TreeView<BaiduFile> treeView = new TreeView<>();
 
-	private BaiduFile root = new BaiduFile();
-
-	private TreeItem<BaiduFile> rootItem = new TreeItem<>(root);
+	private TreeItem<BaiduFile> rootItem = new TreeItem<>(new BaiduFile());
 
 	private LoadDataService loadDataService = new LoadDataService();
 
-	/**
-	 * @param source 待移动的文件/文件夹
-	 */
-	public PathChooserDialog(BaiduFile source) {
-		root.setFileName("全部文件");
-		rootItem.setExpanded(true);
+	private DialogPane dialogPane = this.getDialogPane();
+
+	public BaiduFile getSelected() {
+		return treeView.getSelectionModel().getSelectedItem().getValue();
+	}
+
+	public PathChooserDialog() {
+		BaiduFile loading = new BaiduFile();
+		loading.setFileName("正在获取子目录");
+
 		treeView.setRoot(rootItem);
-		treeView.setPrefWidth(400);
-		treeView.setPrefHeight(260);
 		treeView.getSelectionModel().select(rootItem);
 
-		treeView.setBackground(Background.EMPTY);
+		rootItem.setExpanded(true);
+		rootItem.getValue().setPath("/");
+		rootItem.getValue().setFileName("全部文件");
+		rootItem.getChildren().add(new TreeItem<>(loading));
 
 		treeView.setCellFactory(tree -> new TreeCell<BaiduFile>() {
 
@@ -43,28 +47,31 @@ public class PathChooserDialog extends Dialog<ButtonType> {
 					this.setGraphic(null);
 				} else {
 					String name = item.getFileName();
-					if (StrUtil.isBlank(name)) name = item.getPath().substring(item.getPath().lastIndexOf("/") + 1);
-					this.setGraphic(new Label(name, new ImageView(new Image("image/FileType/Small/FolderType.png"))));
+					if (StrUtil.isBlank(name)) {
+						String path = item.getPath();
+						if (Objects.equals(path, "/apps")) name = "我的应用数据";
+						else name = path.substring(path.lastIndexOf("/") + 1);
+					}
+
+					ImageView icon = new ImageView(new Image("image/FileType/Small/FolderType.png"));
+
+					if (loading.equals(item)) {
+						icon.setImage(new Image("image/loading_20.gif"));
+					}
+
+					this.setGraphic(new Label(name, icon));
 				}
 			}
 		});
 
 		this.setTitle("选择网盘保存路径");
 		this.initOwner(App.primaryStage);
-		this.getDialogPane().setContent(treeView);
-		this.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CLOSE);
 
-		this.setOnCloseRequest(event -> {
-			TreeItem<BaiduFile> target = treeView.getSelectionModel().getSelectedItem();
-			if (source == null) {
-
-			} else {
-
-			}
-		});
-
-		BaiduFile loading = new BaiduFile();
-		loading.setFileName("正在获取子目录");
+		dialogPane.setPrefWidth(415);
+		dialogPane.setPrefHeight(280);
+		dialogPane.setContent(treeView);
+		dialogPane.getStylesheets().add("css/dialog.css");
+		dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CLOSE);
 
 		loadDataService.setOnSucceeded(event -> {
 
@@ -75,18 +82,14 @@ public class PathChooserDialog extends Dialog<ButtonType> {
 				ObservableList<TreeItem<BaiduFile>> children = item.getChildren();
 
 				if (!file.isDirEmpty()) {
-					children.addAll(new TreeItem<>());
+					children.addAll(new TreeItem<>(loading));
 				}
 
 				item.expandedProperty().addListener((observable, oldValue, newValue) -> {
 					treeView.getSelectionModel().select(item);
 
 					if (newValue) {
-
-
-						if (children.size() == 1 && children.get(0).getValue() == null) {
-							children.get(0).setValue(loading);
-
+						if (children.size() == 1 && loading.equals(children.get(0).getValue())) {
 							LoadDataService.Query query = loadDataService.new Query();
 							query.setUrl(Constant.LIST_URL);
 							query.getExtra().put("folder", 1);
@@ -99,6 +102,9 @@ public class PathChooserDialog extends Dialog<ButtonType> {
 				treeView.getSelectionModel().getSelectedItem().getChildren().add(item);
 			});
 
+			ObservableList<TreeItem<BaiduFile>> items = treeView.getSelectionModel().getSelectedItem().getChildren();
+
+			if (items.size() > 1 && loading.equals(items.get(0).getValue())) items.remove(0);
 		});
 
 		LoadDataService.Query query = loadDataService.new Query();
