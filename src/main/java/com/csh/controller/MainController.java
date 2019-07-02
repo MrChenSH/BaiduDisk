@@ -7,6 +7,7 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.cron.CronUtil;
+import cn.hutool.cron.Scheduler;
 import cn.hutool.cron.task.Task;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
@@ -269,7 +270,7 @@ public class MainController extends BorderPane implements Initializable {
 
 		loginService.setOnFailed(event -> this.showLoginView());
 		loginService.setOnSucceeded(event -> {
-//			this.panTask();
+			this.panTask();
 			this.init();
 			this.initMenu();
 			statusLabel.textProperty().bind(loadDataService.statusProperty());
@@ -771,8 +772,15 @@ public class MainController extends BorderPane implements Initializable {
 	private void onClickToLogout() {
 		MessageDialog.show("您确定退出登录吗？", Alert.AlertType.CONFIRMATION)
 				.filter(res -> ButtonType.OK.equals(res)).ifPresent(res -> {
+
+			Scheduler scheduler = CronUtil.getScheduler();
+
 			// 停止定时任务
-			CronUtil.stop();
+			if (scheduler != null && scheduler.isStarted()) {
+				scheduler.stop();
+				scheduler.clear();
+			}
+
 			// 清空yunData信息
 			RequestProxy.YUN_DATA.clear();
 			// 清空Cookie
@@ -950,7 +958,7 @@ public class MainController extends BorderPane implements Initializable {
 
 		WebEngine engine = loginWiew.getEngine();
 
-		this.setCenter(loginWiew);
+		this.homePane.setCenter(loginWiew);
 
 		try {
 			URI uri = URI.create(Constant.HOME_URL);
@@ -970,7 +978,7 @@ public class MainController extends BorderPane implements Initializable {
 						List<String> cookies = manager.get(uri, headers).get("Cookie");
 						// 保存cookie至本地
 						CookieUtil.setCookies(cookies.get(0));
-						this.loginCheck();
+						this.loginService.restart();
 						this.homePane.setCenter(fileTable);
 					} catch (Exception e) {
 						logger.error(e.getMessage(), e);

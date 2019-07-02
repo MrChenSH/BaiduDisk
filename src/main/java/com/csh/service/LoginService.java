@@ -1,7 +1,6 @@
 package com.csh.service;
 
 import cn.hutool.json.JSONObject;
-import com.csh.coustom.dialog.MessageDialog;
 import com.csh.http.RequestProxy;
 import com.csh.utils.Constant;
 import com.csh.utils.CookieUtil;
@@ -96,8 +95,7 @@ public class LoginService extends Service<BooleanProperty> {
 	@Override
 	protected void failed() {
 		super.failed();
-		this.setStatus("登录信息已过期，请重新登录！");
-		MessageDialog.show("登录信息已过期，请重新登录！", this.getException());
+		this.setStatus(this.getException().getMessage());
 	}
 
 	@Override
