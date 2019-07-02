@@ -3,10 +3,8 @@ package com.csh.utils;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -131,7 +129,7 @@ public final class Constant {
 	/**
 	 * 文件分类菜单
 	 */
-	public static final JSONArray CATEGORY = JSONUtil.readJSONArray(new File(Constant.class.getResource("/json/category.json").getFile()), CharsetUtil.CHARSET_UTF_8);
+	public static final JSONArray CATEGORY = JSONUtil.readJSONArray(FileUtil.file(Constant.class.getResource("/json/category.json")), CharsetUtil.CHARSET_UTF_8);
 
 	static {
 		ICON_MAP.put("(.apk)$", "image/FileType/Middle/ApkType.png");

@@ -24,8 +24,8 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -47,7 +47,7 @@ public class RequestProxy {
 	static {
 		try {
 			// 加载解析脚本
-			engine.eval(new FileReader(RequestProxy.class.getResource("/js/util.js").getPath()));
+			engine.eval(new InputStreamReader(RequestProxy.class.getResourceAsStream("/js/util.js")));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -119,12 +119,13 @@ public class RequestProxy {
 		try (HttpResponse rs = httpGet(Constant.HOME_URL, null)) {
 			Matcher matcher = Pattern.compile("var context=(.*);").matcher(rs.body());
 			if (matcher.find()) YUN_DATA = JSONUtil.parseObj(matcher.group(1));
+			if(YUN_DATA.isEmpty()) throw new RuntimeException("登录状态已过期，请重新登录！");
 		} catch (Exception e) {
 			throw e;
 		} finally {
 			logger.info(YUN_DATA.toStringPretty());
-			return YUN_DATA;
 		}
+		return YUN_DATA;
 	}
 
 	/**
